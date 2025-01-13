@@ -55,20 +55,6 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Models
             DataTableTotals = new DataTable();
         }
 
-        //private static ReportExcelFormatSheet? _instance;
-        //public static ReportExcelFormatSheet Instance
-        //{
-        //    get
-        //    {
-
-        //        if (_instance == null)
-        //        {
-        //            _instance = new ReportExcelFormatSheet();
-        //        }
-        //        return _instance;
-
-        //    }
-        //}
     }
 
 

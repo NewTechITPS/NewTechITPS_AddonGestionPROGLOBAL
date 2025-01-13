@@ -50,6 +50,12 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
         private string _itemBtnSave = "Item_14";
         private string _itemGridSavedAjustes = "Item_15";
         private string _itemLoading = "Item_19";
+
+        private string _colAcumulado = "Acumulado (1)";
+        private string _colPorcAcum = "% s. ventas (5)";
+        private string _colMensual = "Mensual";
+        private string _colComision = "Comisiones";
+        private string _colVentas = "Ventas";
         #endregion
 
         public void OSAPB1appl_MenuEvent(ref SAPbouiCOM.MenuEvent pVal, out bool BubbleEvent)
@@ -98,14 +104,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 string valueDateTo = ETDateTo.Value;
 
                 oItem = _oForm.Items.Item(_itemBtnFilter);
-                if (!string.IsNullOrEmpty(valueDateFrom) && !string.IsNullOrEmpty(valueDateTo))
-                {
-                    oItem.Enabled = true;
-                }
-                else
-                {
-                    oItem.Enabled = false;
-                }
+                oItem.Enabled = !string.IsNullOrEmpty(valueDateFrom) && !string.IsNullOrEmpty(valueDateTo);
+                
             }
 
 
@@ -126,107 +126,22 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 {
                     var sheet = VentanaGestionService.CreateSheet();
 
-                    VentanaGestionService.TruncateUDOGestionAjuste();
-
+                    
+                    // GASTOS
                     VentanaGestionService.RefreshDataGastosGrid();
                     VentanaGestionService.CreateColumnsInDataTableExpenses(sheet.DataTableExpenses);
                     VentanaGestionService.LoadDataInDataTableExpenses(sheet);
 
+                    // VENTAS
                     VentanaGestionService.RefreshDataVentasGrid();
                     VentanaGestionService.CreateColumnsInDataTableSales(sheet.DataTableSales);  
                     VentanaGestionService.LoadDataInDataTableSales(sheet);
 
+                    // TOTALES
                     VentanaGestionService.RefreshDataTotalesGrid(sheet);
                     //VentanaGestionService.CreateColumnsInDataTableTotales(sheet.DataTableTotals); 
                     //VentanaGestionService.LoadDataInDataTableTotals(sheet);
 
-                    // TODO GASTOS
-
-                    //DataRow rowSys = sheet.DataTableTotals!.NewRow();
-                    //sheet.DataTableTotals.Rows.Add(rowSys);
-
-                    //// INDUSTRIA
-                    //rowSys["PROGLOBAL"] = "DIVISION INDUSTRIA";
-                    //var recordsIND = totals.Where(data => Regex.IsMatch(data.CC, "^IND"));
-                    //rowSys["Ventas"] = recordsIND.Sum(i => i.Ventas);
-                    //rowSys["Costos"] = recordsIND.Sum(i => i.Costo);
-
-
-                    //foreach (var cc in recordsIND)
-                    //{
-                    //    rowSys = sheet.DataTableTotals!.NewRow();
-                    //    rowSys["PROGLOBAL"] = cc.CC;
-                    //    rowSys["Ventas"] = cc.Ventas;
-                    //    rowSys["Costos"] = cc.Costo;
-                    //    rowSys["Margen"] = cc.Ventas - cc.Costo;
-                    //    rowSys["% s. ventas (1)"] = 0;
-
-                    //    rowSys["Directos"] = cc.Directo;
-                    //    rowSys["% s. ventas (2)"] = 0;
-                    //    rowSys["Indirectos"] = cc.Indirecto;
-                    //    rowSys["% s. ventas (3)"] = 0;
-
-                    //    sheet.DataTableTotals.Rows.Add(rowSys);
-                    //}
-
-
-                    //// AGRO
-                    //rowSys = sheet.DataTableTotals!.NewRow();
-                    //sheet.DataTableTotals.Rows.Add(rowSys);
-                    //rowSys["PROGLOBAL"] = "DIVISION AGRO";
-
-                    //var recordsAGRO = totals.Where(data => Regex.IsMatch(data.CC, "^AGRO"));
-                    //foreach (var cc in recordsAGRO)
-                    //{
-                    //    rowSys = sheet.DataTableTotals!.NewRow();
-                    //    rowSys["PROGLOBAL"] = cc.CC;
-                    //    rowSys["Ventas"] = cc.Ventas;
-                    //    rowSys["Costos"] = cc.Costo;
-                    //    rowSys["Margen"] = 0;
-                    //    rowSys["% s. ventas (1)"] = 0;
-
-                    //    rowSys["Directos"] = cc.Directo;
-                    //    rowSys["% s. ventas (2)"] = 0;
-                    //    rowSys["Indirectos"] = cc.Indirecto;
-                    //    rowSys["% s. ventas (3)"] = 0;
-                    //    sheet.DataTableTotals.Rows.Add(rowSys);
-                    //}
-
-
-                    //// EQUIPO TECNICO
-                    //rowSys = sheet.DataTableTotals!.NewRow();
-                    //sheet.DataTableTotals.Rows.Add(rowSys);
-                    //rowSys["PROGLOBAL"] = "DIVISION EQUIPO TECNICO";
-
-                    //var recordsET = totals.Where(data => Regex.IsMatch(data.CC, "^ET"));
-                    //foreach (var cc in recordsET)
-                    //{
-                    //    rowSys = sheet.DataTableTotals!.NewRow();
-                    //    rowSys["PROGLOBAL"] = cc.CC;
-                    //    rowSys["Ventas"] = cc.Ventas;
-                    //    rowSys["Costos"] = cc.Costo;
-                    //    rowSys["Margen"] = 0;
-                    //    rowSys["% s. ventas (1)"] = 0;
-
-                    //    rowSys["Directos"] = cc.Directo;
-                    //    rowSys["% s. ventas (2)"] = 0;
-                    //    rowSys["Indirectos"] = cc.Indirecto;
-                    //    rowSys["% s. ventas (3)"] = 0;
-                    //    sheet.DataTableTotals.Rows.Add(rowSys);
-                    //}
-
-
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                    //VentanaGestionService.LoadDataInDataTableTotals(sheet);
-
-                    //VentanaGestionService.ResetGestionAjuste();
-                    //VentanaGestionService.LoadSheetNameInGrid(sheet);
-
-                    //
-                    //////////////////
 
                     SAPbouiCOM.Item oItemBtnAjuste = _oForm.Items.Item(_itemBtnApplyAjuste);
                     SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(_itemBtnSave);
@@ -252,13 +167,26 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 _oForm.Freeze(true);
                 try
                 {
-                    VentanaGestionService.TruncateUDOGestionAjuste();
+                    var sheet = VentanaGestionService.CreateSheet();
+
+                    sheet.DataTableExpenses = new System.Data.DataTable();
+                    sheet.DataTableSales = new System.Data.DataTable();
+                    sheet.DataTableTotals = new System.Data.DataTable();
 
                     VentanaGestionService.InsertRecordsUDOGestionAjuste();
 
+                    // GASTOS
                     VentanaGestionService.RefreshDataGastosGrid();
+                    VentanaGestionService.CreateColumnsInDataTableExpenses(sheet.DataTableExpenses);
+                    VentanaGestionService.LoadDataInDataTableExpenses(sheet);
+
+                    // VENTAS
                     VentanaGestionService.RefreshDataVentasGrid();
-                    //VentanaGestionService.RefreshDataTotalesGrid();
+                    VentanaGestionService.CreateColumnsInDataTableSales(sheet.DataTableSales);
+                    VentanaGestionService.LoadDataInDataTableSales(sheet);
+
+                    // TOTALES
+                    VentanaGestionService.RefreshDataTotalesGrid(sheet);
 
                     ConnectionSDK.UIAPI!.MessageBox("Ajuste aplicado con éxito");
 
@@ -284,203 +212,16 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 try
                 {
                     var sheet = VentanaGestionService.CreateSheet();
-
+                    
                     VentanaGestionService.CreateColumnsInDataTableExpenses(sheet.DataTableExpenses);
-                    VentanaGestionService.CreateColumnsInDataTableSales(sheet.DataTableSales);  // TO DO
-                    //VentanaGestionService.CreateColumnsInDataTableTotales(sheet.DataTableTotals); // TO DO
-
-
                     VentanaGestionService.LoadDataInDataTableExpenses(sheet);
+                    
+                    VentanaGestionService.CreateColumnsInDataTableSales(sheet.DataTableSales);
                     VentanaGestionService.LoadDataInDataTableSales(sheet);
 
+                    VentanaGestionService.CreateColumnsInDataTableTotales(sheet.DataTableTotals);
+                    VentanaGestionService.LoadDataInDataTableTotals(sheet);
 
-                    //////////////////////////////////////////////////////
-                    // TODO GASTOS
-                    var expensesData = sheet.DataTableExpenses!.AsEnumerable();
-                    var colsGastos = sheet.DataTableExpenses!.Columns.Cast<System.Data.DataColumn>().Where(col => Regex.IsMatch(col.ColumnName, @"Di$|In$")).ToList();
-
-                    var dataGastos = colsGastos
-                        .Select(col =>
-                        {
-                            string uniqueCC = Regex.Replace(col.ColumnName, @"Di$|In$", "").Trim();
-
-                            double totalDirecto = expensesData
-                                                    .Where(data => !data.IsNull(uniqueCC + " Di"))
-                                                    .Select(data => data.Field<double>(uniqueCC + " Di")).Sum();
-
-                            double totalIndirecto = expensesData
-                                                    .Where(data => !data.IsNull(uniqueCC + " In"))
-                                                    .Select(data => data.Field<double>(uniqueCC + " In")).Sum();
-
-                            return new
-                            {
-                                Code = uniqueCC,
-                                TotalDirecto = totalDirecto,
-                                TotalIndirecto = totalIndirecto,
-                                TotalCC = totalDirecto + totalIndirecto
-                            };
-                        }).Distinct();
-
-
-                    //////////////////////////////////////////////////////
-                    // TODO VENTAS
-                    var SalesData = sheet.DataTableSales!.AsEnumerable();
-                    var colsVentas = sheet.DataTableSales!.Columns.Cast<System.Data.DataColumn>().Where(col => Regex.IsMatch(col.ColumnName, @"^Costo\s+(IND|AGRO|ET)|^Venta\s+(IND|AGRO|ET)")).ToList();
-                    var dataVentasSinAgrupar = colsVentas
-                        .Select(col =>
-                        {
-                            string uniqueCC = Regex.Replace(col.ColumnName, @"^Costo|^Venta", "").Trim();
-
-                            double totalVentas = SalesData
-                                                    .Where(data => !data.IsNull(col.ColumnName))
-                                                    .Select(data => Regex.IsMatch(col.ColumnName, @"^Venta\s+(IND|AGRO|ET)") ? data.Field<double>(col.ColumnName) : 0).Sum();
-                            double totalCosto = SalesData
-                                                    .Where(data => !data.IsNull(col.ColumnName))
-                                                    .Select(data => Regex.IsMatch(col.ColumnName, @"^Costo\s+(IND|AGRO|ET)") ? data.Field<double>(col.ColumnName) : 0).Sum();
-
-                            return new
-                            {
-                                Code = uniqueCC,
-                                Ventas = totalVentas,
-                                Costo = totalCosto,
-                            };
-
-                        }).Distinct();
-
-                    var dataVentasAgrupado = dataVentasSinAgrupar
-                        .GroupBy(d => d.Code)
-                        .Select(d =>
-                        {
-                            return new
-                            {
-                                Code = d.Key,
-                                Ventas = d.Sum(data => data.Ventas),
-                                Costos = d.Sum(data => data.Costo)
-                            };
-                        }).ToList();
-
-                    // TOTALES
-                    var totals = from ventas in dataVentasAgrupado
-                                 join gastos in dataGastos
-                                 on ventas.Code equals gastos.Code
-                                 select new
-                                 {
-                                     CC = ventas.Code,
-                                     Ventas = ventas.Ventas,
-                                     Costo = ventas.Costos,
-                                     Directo = gastos.TotalDirecto,
-                                     Indirecto = gastos.TotalIndirecto,
-                                     TotalGasto = gastos.TotalCC
-                                 };
-
-                    // TOTALES
-                    sheet.DataTableTotals!.Columns.Add("PROGLOBAL");
-
-                    // VENTAS
-                    sheet.DataTableTotals!.Columns.Add("Ventas");
-                    sheet.DataTableTotals!.Columns.Add("Costos");
-                    sheet.DataTableTotals!.Columns.Add("Margen");
-                    sheet.DataTableTotals!.Columns.Add("% s. ventas (1)");
-
-                    // GASTOS
-                    sheet.DataTableTotals!.Columns.Add("Directos"); 
-                    sheet.DataTableTotals!.Columns.Add("% s. ventas (2)");
-                    sheet.DataTableTotals!.Columns.Add("Indirectos");
-                    sheet.DataTableTotals!.Columns.Add("% s. ventas (3)");
-
-                    //// RESULTADOS
-                    //sheet.DataTableTotals!.Columns.Add("Mensual");
-                    //sheet.DataTableTotals!.Columns.Add("% s. ventas (4)");
-                    //sheet.DataTableTotals!.Columns.Add("Comisiones");
-                    //sheet.DataTableTotals!.Columns.Add("Acumulados");
-                    //sheet.DataTableTotals!.Columns.Add("% s. ventas (5)");
-
-                    //// INTERESES
-                    //sheet.DataTableTotals!.Columns.Add("Intereses");
-                    //sheet.DataTableTotals!.Columns.Add("Acumulados_");
-                    //sheet.DataTableTotals!.Columns.Add("% s. ventas (6)");
-
-
-
-                    DataRow rowSys = sheet.DataTableTotals!.NewRow();
-                    sheet.DataTableTotals.Rows.Add(rowSys);
-
-                    // INDUSTRIA
-                    rowSys["PROGLOBAL"] = "DIVISION INDUSTRIA";
-                    var recordsIND = totals.Where(data => Regex.IsMatch(data.CC,"^IND"));
-                    rowSys["Ventas"] = recordsIND.Sum(i => i.Ventas);
-                    rowSys["Costos"] = recordsIND.Sum(i => i.Costo);
-
-
-                    foreach (var cc in recordsIND)
-                    {
-                        rowSys = sheet.DataTableTotals!.NewRow();
-                        rowSys["PROGLOBAL"] = cc.CC;
-                        rowSys["Ventas"] = cc.Ventas;
-                        rowSys["Costos"] = cc.Costo;
-                        rowSys["Margen"] = cc.Ventas - cc.Costo;
-                        rowSys["% s. ventas (1)"] = 0;
-
-                        rowSys["Directos"] = cc.Directo;
-                        rowSys["% s. ventas (2)"] = 0;
-                        rowSys["Indirectos"] = cc.Indirecto;
-                        rowSys["% s. ventas (3)"] = 0;
-
-                        sheet.DataTableTotals.Rows.Add(rowSys);
-                    }
-
-
-                    // AGRO
-                    rowSys = sheet.DataTableTotals!.NewRow();
-                    sheet.DataTableTotals.Rows.Add(rowSys);
-                    rowSys["PROGLOBAL"] = "DIVISION AGRO";
-
-                    var recordsAGRO = totals.Where(data => Regex.IsMatch(data.CC, "^AGRO"));
-                    foreach (var cc in recordsAGRO)
-                    {
-                        rowSys = sheet.DataTableTotals!.NewRow();
-                        rowSys["PROGLOBAL"] = cc.CC;
-                        rowSys["Ventas"] = cc.Ventas;
-                        rowSys["Costos"] = cc.Costo;
-                        rowSys["Margen"] = 0;
-                        rowSys["% s. ventas (1)"] = 0;
-
-                        rowSys["Directos"] = cc.Directo;
-                        rowSys["% s. ventas (2)"] = 0;
-                        rowSys["Indirectos"] = cc.Indirecto;
-                        rowSys["% s. ventas (3)"] = 0;
-                        sheet.DataTableTotals.Rows.Add(rowSys);
-                    }
-
-
-                    // EQUIPO TECNICO
-                    rowSys = sheet.DataTableTotals!.NewRow();
-                    sheet.DataTableTotals.Rows.Add(rowSys);
-                    rowSys["PROGLOBAL"] = "DIVISION EQUIPO TECNICO";
-
-                    var recordsET = totals.Where(data => Regex.IsMatch(data.CC, "^ET"));
-                    foreach (var cc in recordsET)
-                    {
-                        rowSys = sheet.DataTableTotals!.NewRow();
-                        rowSys["PROGLOBAL"] = cc.CC;
-                        rowSys["Ventas"] = cc.Ventas;
-                        rowSys["Costos"] = cc.Costo;
-                        rowSys["Margen"] = 0;
-                        rowSys["% s. ventas (1)"] = 0;
-
-                        rowSys["Directos"] = cc.Directo;
-                        rowSys["% s. ventas (2)"] = 0;
-                        rowSys["Indirectos"] = cc.Indirecto;
-                        rowSys["% s. ventas (3)"] = 0;
-                        sheet.DataTableTotals.Rows.Add(rowSys);
-                    }
-
-
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                    //VentanaGestionService.LoadDataInDataTableTotals(sheet);
 
                     VentanaGestionService.ResetGestionAjuste();
                     VentanaGestionService.LoadSheetNameInGrid(sheet);
@@ -496,6 +237,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(_itemBtnSave);
                     oItemBtnAjuste.Enabled = false;
                     oItemBtnSave.Enabled = false;
+
                 } catch(Exception ex)
                 {
                     NotificationService.Error("Error al guardar; Mensaje ->" + ex.Message);
@@ -529,7 +271,21 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
             }
 
-           
+            // CALCULAR ACUMULADO Y SU PORCENTAJE
+            if(pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ColUID == _colComision && pVal.ItemUID == _itemGridTotales && pVal.ActionSuccess)
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
+                Grid GTotales = _oForm.Items.Item(_itemGridTotales).Specific;
+
+                double mensual = GTotales.DataTable.GetValue(_colMensual, pVal.Row);
+                double comision = GTotales.DataTable.GetValue(_colComision, pVal.Row);
+                double ventas = GTotales.DataTable.GetValue(_colVentas, pVal.Row);
+
+                double acumulado = mensual + comision;
+                GTotales.DataTable.Columns.Item(_colAcumulado).Cells.Item(pVal.Row).Value = acumulado;
+                GTotales.DataTable.Columns.Item(_colPorcAcum).Cells.Item(pVal.Row).Value = ventas != 0 ? acumulado / ventas * 100 : 0;
+            }
+
         }
 
         public void OSAPB1appl_FormDataEvent(ref SAPbouiCOM.BusinessObjectInfo BusinessObjectInfo, out bool BubbleEvent)

@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Vml;
 using PROGLOBAL_DataGestionAjuste_addon_EA.Common;
 using PROGLOBAL_DataGestionAjuste_addon_EA.Models;
 using PROGLOBAL_ReservationInvoiceCloser.Services;
@@ -10,6 +11,7 @@ using SAPbobsCOM;
 using SAPbouiCOM;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
@@ -18,6 +20,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 {
@@ -133,7 +136,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 {
                     oDataTableGastos = _oForm.DataSources.DataTables.Add("tableGastos");
                 }
-
+                oDataTableGastos.Clear();
                 oDataTableGastos.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', 0)");
 
                 GRIDGastos.DataTable = oDataTableGastos;
@@ -191,7 +194,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 {
                     oDataTableVentas = _oForm.DataSources.DataTables.Add("tableVentas");
                 }
-
+                oDataTableVentas.Clear();
                 oDataTableVentas.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', 1)");
 
 
@@ -216,307 +219,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
 }
 
-        public static void RefreshDataTotalesGrid(ReportExcelFormatSheet sheet)
-        {
-            try {
-                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-
-                string formatDate = "yyyyMMdd";
-                string formatDateSP = "yyyy-MM-dd";
-
-                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
-                EditText ETDateFrom = item.Specific;
-                string sDateFrom = ETDateFrom.Value;
-                string DateFrom = DateTime.ParseExact(sDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
-
-                item = _oForm.Items.Item(_itemDateTo);
-                EditText ETDateTo = item.Specific;
-                string sDateTo = ETDateTo.Value;
-                string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
-
-                item = _oForm.Items.Item(_itemGridTotales);
-                Grid GRIDTotales = item.Specific;
-
-                SAPbouiCOM.DataTable oDataTableTotales;
-
-                try
-                {
-                    oDataTableTotales = _oForm.DataSources.DataTables.Item("tableTotales");
-                }
-                catch
-                {
-                    oDataTableTotales = _oForm.DataSources.DataTables.Add("tableTotales");
-                }
-
-                var dataTotals = GetDataTotals(sheet);
-
-                List<string> columns = ["Ventas", "Costos", "Margen", "% s. ventas (1)", "Directos", "% s. ventas (2)", "Indirectos", "% s. ventas (3)"];
-
-                oDataTableTotales.Columns.Add("Detalle", BoFieldsType.ft_AlphaNumeric);
-                columns.ForEach(colName =>
-                {
-                    oDataTableTotales.Columns.Add(colName, BoFieldsType.ft_Float);
-                });
-
-
-                // INDUSTRIA
-                var recordsIND = dataTotals.Where(data => Regex.IsMatch(data.CC!, "^IND"));
-
-                var totalVentaIndustria = recordsIND.Sum(r => r.Ventas);
-                var totalCostoIndustria = recordsIND.Sum(r => r.Costo);
-                var totalMargenIndustria = totalVentaIndustria - totalCostoIndustria;
-                var totalPorcVentaIndustria = totalVentaIndustria != 0 ? (totalMargenIndustria / totalVentaIndustria * 100) : 0;
-
-                var totalDirectoIndustria = recordsIND.Sum(r => r.Directo);
-                var totalPorcVtaDirectIndustria = totalVentaIndustria != 0 ? (totalDirectoIndustria / totalVentaIndustria * 100) : 0;
-                var totalIndirectoIndustria = recordsIND.Sum(r => r.Indirecto);
-                var totalPorcVtaIndirectIndustria = totalVentaIndustria != 0 ? (totalIndirectoIndustria / totalVentaIndustria * 100) : 0;
-
-                oDataTableTotales.Rows.Add(1);
-                oDataTableTotales.SetValue("Detalle", 0, "DIVISION INDUSTRIA");
-                oDataTableTotales.SetValue("Ventas", 0, totalVentaIndustria);
-                oDataTableTotales.SetValue("Costos", 0, totalCostoIndustria);
-                oDataTableTotales.SetValue("Margen", 0, totalMargenIndustria);
-                oDataTableTotales.SetValue("% s. ventas (1)", 0, totalPorcVentaIndustria);
-
-                oDataTableTotales.SetValue("Directos", 0, totalDirectoIndustria);
-                oDataTableTotales.SetValue("% s. ventas (2)", 0, totalPorcVtaDirectIndustria);
-                oDataTableTotales.SetValue("Indirectos", 0, totalIndirectoIndustria);
-                oDataTableTotales.SetValue("% s. ventas (3)", 0, totalPorcVtaIndirectIndustria);
-
-                int countIndex = oDataTableTotales.Rows.Count;
-
-                oDataTableTotales.Rows.Add(recordsIND.Count());
-
-                
-                for (int idata = 0; idata < recordsIND.Count(); idata++)
-                {
-                    var data = recordsIND.ToList();
-                    var detalle = data[idata].CC;
-                    var ventas = data[idata].Ventas;
-                    var costos = data[idata].Costo;
-                    var margen = ventas - costos;
-                    var porcVenta = ventas != 0 ? (margen / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Detalle", countIndex, detalle);
-                    oDataTableTotales.SetValue("Ventas", countIndex, ventas);
-                    oDataTableTotales.SetValue("Costos", countIndex, costos);
-                    oDataTableTotales.SetValue("Margen", countIndex, margen);
-                    oDataTableTotales.SetValue("% s. ventas (1)", countIndex, porcVenta);
-
-                    var directo = data[idata].Directo;
-                    var porcVtaDirect = ventas != 0 ? (directo / ventas * 100) : 0;
-                    var indirecto = data[idata].Indirecto;
-                    var porcVtaIndirect = ventas != 0 ? (indirecto / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Directos", countIndex, directo);
-                    oDataTableTotales.SetValue("% s. ventas (2)", countIndex, porcVtaDirect);
-                    oDataTableTotales.SetValue("Indirectos", countIndex, indirecto);
-                    oDataTableTotales.SetValue("% s. ventas (3)", countIndex, porcVtaIndirect);
-
-                    countIndex++;
-                }
-
-                //// AGRO
-                var recordsAGRO = dataTotals.Where(data => Regex.IsMatch(data.CC!, "^AGRO"));
-
-                var totalVentaAGRO = recordsAGRO.Sum(r => r.Ventas);
-                var totalCostoAGRO = recordsAGRO.Sum(r => r.Costo);
-                var totalMargenAGRO = totalVentaAGRO - totalCostoAGRO;
-                var totalPorcVentaAGRO = totalVentaAGRO != 0 ? (totalMargenAGRO / totalVentaAGRO * 100) : 0;
-
-                var totalDirectoAGRO = recordsAGRO.Sum(r => r.Directo);
-                var totalPorcVtaDirectAGRO = totalVentaAGRO != 0 ? (totalDirectoAGRO / totalVentaAGRO * 100) : 0;
-                var totalIndirectoAGRO = recordsAGRO.Sum(r => r.Indirecto);
-                var totalPorcVtaIndirectAGRO = totalVentaAGRO != 0 ? (totalIndirectoAGRO / totalVentaAGRO * 100) : 0;
-
-                oDataTableTotales.Rows.Add(1);
-                oDataTableTotales.SetValue("Detalle", countIndex, "DIVISION AGRO");
-                oDataTableTotales.SetValue("Ventas", countIndex, totalVentaAGRO);
-                oDataTableTotales.SetValue("Costos", countIndex, totalCostoAGRO);
-                oDataTableTotales.SetValue("Margen", countIndex, totalMargenAGRO);
-                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalPorcVentaAGRO);
-
-                oDataTableTotales.SetValue("Directos", countIndex, totalDirectoAGRO);
-                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalPorcVtaDirectAGRO);
-                oDataTableTotales.SetValue("Indirectos", countIndex, totalIndirectoAGRO);
-                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalPorcVtaIndirectAGRO);
-
-
-                countIndex = oDataTableTotales.Rows.Count;
-
-                oDataTableTotales.Rows.Add(recordsAGRO.Count());
-                for (int idata = 0; idata < recordsAGRO.Count(); idata++)
-                {
-                    var data = recordsAGRO.ToList();
-                    var detalle = data[idata].CC;
-                    var ventas = data[idata].Ventas;
-                    var costos = data[idata].Costo;
-                    var margen = ventas - costos;
-                    var porcVenta = ventas != 0 ? (margen / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Detalle", countIndex, detalle);
-                    oDataTableTotales.SetValue("Ventas", countIndex, ventas);
-                    oDataTableTotales.SetValue("Costos", countIndex, costos);
-                    oDataTableTotales.SetValue("Margen", countIndex, margen);
-                    oDataTableTotales.SetValue("% s. ventas (1)", countIndex, porcVenta);
-
-                    var directo = data[idata].Directo;
-                    var porcVtaDirect = ventas != 0 ? (directo / ventas * 100) : 0;
-                    var indirecto = data[idata].Indirecto;
-                    var porcVtaIndirect = ventas != 0 ? (indirecto / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Directos", countIndex, directo);
-                    oDataTableTotales.SetValue("% s. ventas (2)", countIndex, porcVtaDirect);
-                    oDataTableTotales.SetValue("Indirectos", countIndex, indirecto);
-                    oDataTableTotales.SetValue("% s. ventas (3)", countIndex, porcVtaIndirect);
-
-                    countIndex++;
-                }
-
-
-                //// EQUIPO TECNICO
-                var recordsET = dataTotals.Where(data => Regex.IsMatch(data.CC!, "^ET"));
-
-                var totalVentaET = recordsET.Sum(r => r.Ventas);
-                var totalCostoET = recordsET.Sum(r => r.Costo);
-                var totalMargenET = totalVentaET - totalCostoET;
-                var totalPorcVentaET = totalVentaET != 0 ? (totalMargenET / totalVentaET * 100) : 0;
-
-                var totalDirectoET = recordsET.Sum(r => r.Directo);
-                var totalPorcVtaDirectET = totalVentaET != 0 ? (totalDirectoET / totalVentaET * 100) : 0;
-                var totalIndirectoET = recordsET.Sum(r => r.Indirecto);
-                var totalPorcVtaIndirectET = totalVentaET != 0 ? (totalIndirectoET / totalVentaET * 100) : 0;
-
-                oDataTableTotales.Rows.Add(1);
-                oDataTableTotales.SetValue("Detalle", countIndex, "DIVISION EQUIPO TECNICO");
-                oDataTableTotales.SetValue("Ventas", countIndex, totalVentaET);
-                oDataTableTotales.SetValue("Costos", countIndex, totalCostoET);
-                oDataTableTotales.SetValue("Margen", countIndex, totalMargenET);
-                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalPorcVentaET);
-
-                oDataTableTotales.SetValue("Directos", countIndex, totalDirectoET);
-                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalPorcVtaDirectET);
-                oDataTableTotales.SetValue("Indirectos", countIndex, totalIndirectoET);
-                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalPorcVtaIndirectET);
-
-
-                countIndex = oDataTableTotales.Rows.Count;
-
-                oDataTableTotales.Rows.Add(recordsET.Count());
-                for (int idata = 0; idata < recordsET.Count(); idata++)
-                {
-                    var data = recordsET.ToList();
-                    var detalle = data[idata].CC;
-                    var ventas = data[idata].Ventas;
-                    var costos = data[idata].Costo;
-                    var margen = ventas - costos;
-                    var porcVenta = ventas != 0 ? (margen / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Detalle", countIndex, detalle);
-                    oDataTableTotales.SetValue("Ventas", countIndex, ventas);
-                    oDataTableTotales.SetValue("Costos", countIndex, costos);
-                    oDataTableTotales.SetValue("Margen", countIndex, margen);
-                    oDataTableTotales.SetValue("% s. ventas (1)", countIndex, porcVenta);
-
-                    var directo = data[idata].Directo;
-                    var porcVtaDirect = ventas != 0 ? (directo / ventas * 100) : 0;
-                    var indirecto = data[idata].Indirecto;
-                    var porcVtaIndirect = ventas != 0 ? (indirecto / ventas * 100) : 0;
-
-                    oDataTableTotales.SetValue("Directos", countIndex, directo);
-                    oDataTableTotales.SetValue("% s. ventas (2)", countIndex, porcVtaDirect);
-                    oDataTableTotales.SetValue("Indirectos", countIndex, indirecto);
-                    oDataTableTotales.SetValue("% s. ventas (3)", countIndex, porcVtaIndirect);
-
-                    countIndex++;
-                }
-
-
-                // TOTAL COMPONENTES
-                var totalComponentes = new
-                {
-                    Detalle = "TOTAL COMPONENTES",
-                    Ventas = totalVentaIndustria + totalVentaAGRO,
-                    Costos = totalCostoIndustria + totalCostoAGRO,
-                    Margen = totalMargenIndustria + totalMargenAGRO,
-                    PorcVenta_1 = totalPorcVentaIndustria + totalPorcVentaAGRO,
-                    Directo = totalDirectoIndustria + totalDirectoAGRO,
-                    PorcVenta_2 = totalPorcVtaDirectIndustria + totalPorcVtaDirectAGRO,
-                    Indirecto = totalIndirectoIndustria + totalIndirectoAGRO,
-                    PorcVenta_3 = totalPorcVtaIndirectIndustria + totalPorcVtaIndirectAGRO
-                };
-
-                oDataTableTotales.Rows.Add(1);
-                oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
-                oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
-                oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
-                oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
-                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
-
-                oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
-                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
-                oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
-                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
-
-                countIndex++;
-
-                // TOTAL PROGLOBAL
-                var totalProglobal = new
-                {
-                    Detalle = "TOTAL PROGLOBAL",
-                    Ventas = totalComponentes.Ventas + totalVentaET,
-                    Costos = totalComponentes.Costos + totalCostoET,
-                    Margen = totalComponentes.Margen + totalMargenET,
-                    PorcVenta_1 = totalComponentes.PorcVenta_1 + totalPorcVentaET,
-                    Directo = totalComponentes.Directo + totalDirectoET,
-                    PorcVenta_2 = totalComponentes.PorcVenta_2 + totalPorcVtaDirectET,
-                    Indirecto = totalComponentes.Indirecto + totalIndirectoET,
-                    PorcVenta_3 = totalComponentes.PorcVenta_3 + totalPorcVtaIndirectET
-                };
-
-                oDataTableTotales.Rows.Add(1);
-                oDataTableTotales.SetValue("Detalle", countIndex, totalProglobal.Detalle);
-                oDataTableTotales.SetValue("Ventas", countIndex, totalProglobal.Ventas);
-                oDataTableTotales.SetValue("Costos", countIndex, totalProglobal.Costos);
-                oDataTableTotales.SetValue("Margen", countIndex, totalProglobal.Margen);
-                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalProglobal.PorcVenta_1);
-
-                oDataTableTotales.SetValue("Directos", countIndex, totalProglobal.Directo);
-                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalProglobal.PorcVenta_2);
-                oDataTableTotales.SetValue("Indirectos", countIndex, totalProglobal.Indirecto);
-                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalProglobal.PorcVenta_3);
-
-
-                GRIDTotales.DataTable = oDataTableTotales;
-
-                for (int i = 0; i < GRIDTotales.DataTable.Rows.Count; i++)
-                {
-                    string detalle = GRIDTotales.DataTable.GetValue(0, i);
-                    if (Regex.IsMatch(detalle, @"^TOTAL COMPONENTES"))
-                    {
-                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16776960);   
-                    }
-                    else if (Regex.IsMatch(detalle, @"^TOTAL PROGLOBAL"))
-                    {
-                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 13808780);
-                    }
-                    else if (Regex.IsMatch(detalle, @"^DIVISION"))
-                    {
-                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16777138);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            finally
-            {
-                MarshalGC.ReleaseComObject(_oForm);
-            }
-}
-
+       
         public static void TruncateUDOGestionAjuste()
         {
             try { 
@@ -555,8 +258,12 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
                 SAPbouiCOM.Item item = _oForm!.Items.Item(_itemGridGastos);
-                DateTime dateFrom = _oForm.Items.Item(_itemDateFrom).Specific.Value;
-                DateTime dateTo = _oForm.Items.Item(_itemDateTo).Specific.Value;
+                string dateFrom = _oForm.Items.Item(_itemDateFrom).Specific.Value;
+                string dateTo = _oForm.Items.Item(_itemDateTo).Specific.Value;
+
+                DateTime dateFromParser = DateTime.ParseExact(dateFrom, "yyyyMMdd", CultureInfo.InvariantCulture);
+                DateTime dateToParser = DateTime.ParseExact(dateTo, "yyyyMMdd", CultureInfo.InvariantCulture);
+
                 Grid GRIDGastos = item.Specific;
 
                 for (int i = 0; i < GRIDGastos.Rows.Count; i++)
@@ -567,19 +274,50 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                     if (ajuste > 0)
                     {
+
                         SAPbobsCOM.CompanyService? companyService = ConnectionSDK.DIAPI!.GetCompanyService();
                         SAPbobsCOM.GeneralService? generalService = companyService.GetGeneralService("GESTIONAJUSTE");
-                        SAPbobsCOM.GeneralData generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+                        GeneralData generalData;
+                        _oRecordset = ConnectionSDK.DIAPI.GetBusinessObject(BoObjectTypes.BoRecordset);
 
-                        generalData.SetProperty("Code", account);
-                        generalData.SetProperty("U_Ajuste", ajuste);
-                        generalData.SetProperty("U_DateFrom", dateFrom);
-                        generalData.SetProperty("U_DateTo", dateTo);
-                        generalData.SetProperty("U_Entity", "0");
+                        _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{account}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '0'");
+                        string? code = _oRecordset.Fields.Item(0).Value;
+                        bool existAjuste = !string.IsNullOrEmpty(code);
+                        if (existAjuste)
+                        {
+                            GeneralDataParams generalDataParams = (GeneralDataParams)generalService.GetDataInterface(GeneralServiceDataInterfaces.gsGeneralDataParams);
+                            generalDataParams.SetProperty("Code", code);
 
-                        generalService.Add(generalData);
+                            generalData = generalService.GetByParams(generalDataParams);
+
+                            generalData.SetProperty("U_Ajuste", ajuste);
+                            generalService.Update(generalData);
+                        } else
+                        {
+
+                            generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+                        
+                            _oRecordset.DoQuery(@"SELECT MAX(""Code"") FROM ""@GESTIONAJUSTE""");
+                            code = string.IsNullOrEmpty(_oRecordset.Fields.Item(0).Value) ? "1" : ((int)int.Parse(_oRecordset.Fields.Item(0).Value) + 1).ToString();
+
+                            generalData.SetProperty("Code", code);
+                            generalData.SetProperty("U_Detail", account);
+                            generalData.SetProperty("U_Ajuste", ajuste);
+                            generalData.SetProperty("U_DateFrom", dateFromParser);
+                            generalData.SetProperty("U_DateTo", dateToParser);
+                            generalData.SetProperty("U_Entity", "0");
+
+                            generalService.Add(generalData);
+
+                        }
+
+
                     }
                 }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
             finally
             {
@@ -855,8 +593,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     {
                         Code = uniqueCC,
                         TotalDirecto = totalDirecto,
-                        TotalIndirecto = totalIndirecto,
-                        TotalCC = totalDirecto + totalIndirecto
+                        TotalIndirecto = totalIndirecto
                     };
                 }).Distinct();
 
@@ -881,7 +618,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     {
                         Code = uniqueCC,
                         Ventas = totalVentas,
-                        Costo = totalCosto,
+                        Costos = totalCosto,
                     };
 
                 }).Distinct();
@@ -894,7 +631,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     {
                         Code = d.Key,
                         Ventas = d.Sum(data => data.Ventas),
-                        Costos = d.Sum(data => data.Costo)
+                        Costos = d.Sum(data => data.Costos)
                     };
                 }).ToList();
 
@@ -906,14 +643,320 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                          {
                              CC = ventas.Code,
                              Ventas = ventas.Ventas,
-                             Costo = ventas.Costos,
+                             Costos = ventas.Costos,
                              Directo = gastos.TotalDirecto,
-                             Indirecto = gastos.TotalIndirecto,
-                             TotalGasto = gastos.TotalCC
+                             Indirecto = gastos.TotalIndirecto
                          };
 
 
             return totals.ToList();
+        }
+
+        public static void RefreshDataTotalesGrid(ReportExcelFormatSheet sheet)
+        {
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+
+                string formatDate = "yyyyMMdd";
+                string formatDateSP = "yyyy-MM-dd";
+
+                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
+                EditText ETDateFrom = item.Specific;
+                string sDateFrom = ETDateFrom.Value;
+                string DateFrom = DateTime.ParseExact(sDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
+
+                item = _oForm.Items.Item(_itemDateTo);
+                EditText ETDateTo = item.Specific;
+                string sDateTo = ETDateTo.Value;
+                string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
+
+                item = _oForm.Items.Item(_itemGridTotales);
+                Grid GRIDTotales = item.Specific;
+
+                SAPbouiCOM.DataTable oDataTableTotales;
+
+                try
+                {
+                    oDataTableTotales = _oForm.DataSources.DataTables.Item("tableTotales");
+                }
+                catch
+                {
+                    oDataTableTotales = _oForm.DataSources.DataTables.Add("tableTotales");
+                }
+                oDataTableTotales.Clear();
+
+                List<string> columns = ["Ventas", "Costos", "Margen", "% s. ventas (1)", "Directos", "% s. ventas (2)", "Indirectos",
+                    "% s. ventas (3)", "T. Gastos", "Mensual", "% s. ventas (4)" , "Comisiones", "Acumulado (1)", "% s. ventas (5)", "Intereses", "Acumulado (2)", "% s. ventas (6)"];
+
+                oDataTableTotales.Columns.Add("Detalle", BoFieldsType.ft_AlphaNumeric);
+                columns.ForEach(colName => oDataTableTotales.Columns.Add(colName, BoFieldsType.ft_Float));
+
+                var dataTotals = GetDataTotals(sheet);
+                int countIndex = 0;
+
+                // INDUSTRIA
+                var totals_IND = LoadDataInDataTable(dataTotals, "^IND", oDataTableTotales, countIndex);
+                countIndex = oDataTableTotales.Rows.Count;
+
+                // AGRO
+                var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", oDataTableTotales, countIndex);
+                countIndex = oDataTableTotales.Rows.Count;
+
+                // TOTAL COMPONENTES
+                LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, oDataTableTotales, countIndex);
+                countIndex++;
+
+                //// EQUIPO TECNICO
+                var totals_ET = LoadDataInDataTable(dataTotals, "^ET", oDataTableTotales, countIndex);
+                countIndex = oDataTableTotales.Rows.Count;
+
+                // TOTAL PROGLOBAL
+                LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, oDataTableTotales, countIndex);
+
+
+                GRIDTotales.DataTable = oDataTableTotales;
+
+                for (int i = 0; i < GRIDTotales.DataTable.Rows.Count; i++)
+                {
+                    string detalle = GRIDTotales.DataTable.GetValue(0, i);
+                    switch (detalle)
+                    {
+                        case "DIVISION INDUSTRIA":
+                        case "DIVISION AGRO":
+                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16777138);
+                            break;
+                        case "TOTAL COMPONENTES":
+                        case "DIVISION EQUIPO TECNICO":
+                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16776960);
+                            break;
+                        case "TOTAL PROGLOBAL":
+                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 14483330);
+                            break;
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                MarshalGC.ReleaseComObject(_oForm);
+            }
+        }
+
+
+        public static TotalsEntity LoadDataInDataTable(List<VentasGastoTotales> dataTotals, string regexEntity, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        {
+            string Detalle = regexEntity switch
+            {
+                "^IND" => "DIVISION INDUSTRIA",
+                "^AGRO" => "DIVISION AGRO",
+                "^ET" => "DIVISION EQUIPO TECNICO",
+                _ => "No definido"
+            };
+
+            var records = dataTotals.Where(data => Regex.IsMatch(data.CC!, $"^{regexEntity}"));
+
+            var totalVenta = records.Sum(r => r.Ventas);
+            var totalCosto = records.Sum(r => r.Costos);
+            var totalMargen = totalVenta - totalCosto; // Ventas - Costos
+            var totalPorcVenta = totalVenta != 0 ? totalMargen / totalVenta * 100 : 0; // Margen / Ventas * 100
+
+            var totalDirecto = records.Sum(r => r.Directo);
+            var totalPorcVtaDirect = totalVenta != 0 ? totalDirecto / totalVenta * 100 : 0; // Directo / Ventas * 100
+            var totalIndirecto = records.Sum(r => r.Indirecto);
+            var totalPorcVtaIndirect = totalVenta != 0 ? totalIndirecto / totalVenta * 100 : 0; // Indirecto / Ventas
+            var totalTotalGastos = totalDirecto + totalIndirecto;   // Directo + Indirecto 
+
+            var totalMensual = totalMargen - totalDirecto - totalIndirecto; // MargenVentas - Directo - Indirecto
+            var totalPorcVtaMensual = totalVenta != 0 ? totalMensual / totalVenta * 100 : 0; // Mensual / Ventas * 100
+            var totalComisiones = records.Sum(r => r.Comision); // 0 (manual)
+            var totalAcumuladoMensualComision = totalMensual + totalComisiones;  // Mensual + Comision
+            var totalPorcVtaAcumuladoMensualComision = totalVenta != 0 ? totalAcumuladoMensualComision / totalVenta * 100 : 0; // Acumulado (1) / Ventas * 100
+
+            var totalIntereses = records.Sum(r => r.Intereses);
+            var totalAcumuladoIntereses = totalAcumuladoMensualComision + totalIntereses;
+            var totalPorcAcumuladoIntereses = totalVenta != 0 ? totalAcumuladoIntereses / totalVenta * 100 : 0; // Acumulado (2) / Ventas * 100
+
+            oDataTableTotales.Rows.Add();
+            oDataTableTotales.SetValue("Detalle", countIndex, Detalle);
+            oDataTableTotales.SetValue("Ventas", countIndex, totalVenta);
+            oDataTableTotales.SetValue("Costos", countIndex, totalCosto);
+            oDataTableTotales.SetValue("Margen", countIndex, totalMargen);
+            oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalPorcVenta);
+
+            oDataTableTotales.SetValue("Directos", countIndex, totalDirecto);
+            oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalPorcVtaDirect);
+            oDataTableTotales.SetValue("Indirectos", countIndex, totalIndirecto);
+            oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalPorcVtaIndirect);
+            oDataTableTotales.SetValue("T. Gastos", countIndex, totalTotalGastos);
+
+            oDataTableTotales.SetValue("Mensual", countIndex, totalMensual);
+            oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalPorcVtaMensual);
+            oDataTableTotales.SetValue("Comisiones", countIndex, totalComisiones);
+            oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalAcumuladoMensualComision);
+            oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalPorcVtaAcumuladoMensualComision);
+
+            oDataTableTotales.SetValue("Intereses", countIndex, totalIntereses);
+            oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalAcumuladoIntereses);
+            oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalPorcAcumuladoIntereses);
+
+            countIndex = oDataTableTotales.Rows.Count;
+            oDataTableTotales.Rows.Add(records.Count());
+
+            for (int idata = 0; idata < records.Count(); idata++)
+            {
+                var data = records.ToList()[idata];
+
+                oDataTableTotales.SetValue("Detalle", countIndex, data.CC);
+                oDataTableTotales.SetValue("Ventas", countIndex, data.Ventas);
+                oDataTableTotales.SetValue("Costos", countIndex, data.Costos);
+                oDataTableTotales.SetValue("Margen", countIndex, data.MargenVentas);
+                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, data.PorcentajeVentas);
+
+                oDataTableTotales.SetValue("Directos", countIndex, data.Directo);
+                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, data.PorcentajeVentaDirecto);
+                oDataTableTotales.SetValue("Indirectos", countIndex, data.Indirecto);
+                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, data.PorcentajeVentaIndirecto);
+                oDataTableTotales.SetValue("T. Gastos", countIndex, data.TotalGastos);
+
+                oDataTableTotales.SetValue("Mensual", countIndex, data.Mensual);
+                oDataTableTotales.SetValue("% s. ventas (4)", countIndex, data.PorcentajeVentaMensual);
+                oDataTableTotales.SetValue("Comisiones", countIndex, data.Comision);
+                oDataTableTotales.SetValue("Acumulado (1)", countIndex, data.AcumuladoMensualComision);
+                oDataTableTotales.SetValue("% s. ventas (5)", countIndex, data.PorcentajeVentaAcumuladoMensualComision);
+
+                oDataTableTotales.SetValue("Intereses", countIndex, data.Intereses);
+                oDataTableTotales.SetValue("Acumulado (2)", countIndex, data.AcumuladoIntereses);
+                oDataTableTotales.SetValue("% s. ventas (6)", countIndex, data.PorcentajeAcumuladoIntereses);
+
+                countIndex++;
+            }
+
+            return new TotalsEntity()
+            {
+                totalVenta = totalVenta,
+                totalCosto = totalCosto,
+                totalMargen = totalMargen,
+                totalPorcVenta = totalPorcVenta,
+                totalDirecto = totalDirecto,
+                totalPorcVtaDirect = totalPorcVtaDirect,
+                totalIndirecto = totalIndirecto,
+                totalPorcVtaIndirect = totalPorcVtaIndirect,
+                totalTotalGastos = totalTotalGastos,
+                totalMensual = totalMensual,
+                totalPorcVtaMensual = totalPorcVtaMensual,
+                totalComisiones = totalComisiones,
+                totalAcumuladoMensualComision = totalAcumuladoMensualComision,
+                totalPorcVtaAcumuladoMensualComision = totalPorcVtaAcumuladoMensualComision,
+                totalIntereses = totalIntereses,
+                totalAcumuladoIntereses = totalAcumuladoIntereses,
+                totalPorcAcumuladoIntereses = totalPorcAcumuladoIntereses,         
+            };
+        }
+
+        public static void LoadInTable_TOTALCOMPONENTES(TotalsEntity totals_IND, TotalsEntity totals_AGRO, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        {
+            // TOTAL COMPONENTES
+            var totalComponentes = new
+            {
+                Detalle = "TOTAL COMPONENTES",
+                Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta,
+                Costos = totals_IND.totalCosto + totals_AGRO.totalCosto,
+                Margen = totals_IND.totalMargen + totals_AGRO.totalMargen,
+                PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta,
+                Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto,
+                PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect,
+                Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto,
+                PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect,
+                TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos,
+                Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual,
+                PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual,
+                Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones,
+                AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision,
+                PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision,
+                Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses,
+                AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses,
+                PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses
+            };
+
+                oDataTableTotales.Rows.Add();
+                oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
+                oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
+                oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
+                oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
+                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
+
+                oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
+                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
+                oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
+                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
+                oDataTableTotales.SetValue("T. Gastos", countIndex, totalComponentes.TotalGastos);
+
+                oDataTableTotales.SetValue("Mensual", countIndex, totalComponentes.Mensual);
+                oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalComponentes.PorcentajeVentaMensual);
+                oDataTableTotales.SetValue("Comisiones", countIndex, totalComponentes.Comisiones);
+                oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalComponentes.AcumuladoMensualComisiones);
+                oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalComponentes.PorcentajeVentaAcumuladoMensualComisiones);
+
+                oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
+                oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
+                oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
+                
+            }
+
+
+        public static void LoadInTable_TOTALPROGLOBAL(TotalsEntity totals_IND, TotalsEntity totals_AGRO, TotalsEntity totals_ET, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        {
+            // TOTAL COMPONENTES
+            var totalComponentes = new
+            {
+                Detalle = "TOTAL PROGLOBAL",
+                Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta + totals_ET.totalVenta,
+                Costos = totals_IND.totalCosto + totals_AGRO.totalCosto + totals_ET.totalCosto,
+                Margen = totals_IND.totalMargen + totals_AGRO.totalMargen + totals_ET.totalMargen,
+                PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta + totals_ET.totalPorcVenta,
+                Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto + totals_ET.totalDirecto,
+                PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect + totals_ET.totalPorcVtaDirect,
+                Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto + totals_ET.totalIndirecto,
+                PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect + totals_ET.totalPorcVtaIndirect,
+                TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos + totals_ET.totalTotalGastos,
+                Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual + totals_ET.totalMensual,
+                PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual + totals_ET.totalPorcVtaMensual,
+                Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones + totals_ET.totalComisiones,
+                AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision + totals_ET.totalAcumuladoMensualComision,
+                PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision + totals_ET.totalPorcVtaAcumuladoMensualComision,
+                Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses + totals_ET.totalIntereses,
+                AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses + totals_ET.totalAcumuladoIntereses,
+                PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses + totals_ET.totalPorcAcumuladoIntereses
+            };
+
+            oDataTableTotales.Rows.Add();
+            oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
+            oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
+            oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
+            oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
+            oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
+
+            oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
+            oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
+            oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
+            oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
+            oDataTableTotales.SetValue("T. Gastos", countIndex, totalComponentes.TotalGastos);
+
+            oDataTableTotales.SetValue("Mensual", countIndex, totalComponentes.Mensual);
+            oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalComponentes.PorcentajeVentaMensual);
+            oDataTableTotales.SetValue("Comisiones", countIndex, totalComponentes.Comisiones);
+            oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalComponentes.AcumuladoMensualComisiones);
+            oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalComponentes.PorcentajeVentaAcumuladoMensualComisiones);
+
+            oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
+            oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
+            oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
+
         }
     }
 
@@ -921,9 +964,44 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
     {
         public string? CC { get; set; }
         public double? Ventas { get; set; }
-        public double? Costo { get; set; }
+        public double? Costos { get; set; }
+        public double? MargenVentas { get => Ventas - Costos; }
+        public double? PorcentajeVentas { get => Ventas != 0 ? (Ventas - Costos) / Ventas * 100 : 0; }
         public double? Directo { get; set; }
+        public double? PorcentajeVentaDirecto { get => Ventas != 0 ? Directo / Ventas * 100 : 0; }
         public double? Indirecto { get; set; }
-        public double? TotalGasto { get; set; }
+        public double? PorcentajeVentaIndirecto { get => Ventas != 0 ? Indirecto / Ventas * 100 : 0; }
+        public double? TotalGastos { get => Directo + Indirecto; }
+        public double? Mensual { get => MargenVentas - Directo - Indirecto; }
+        public double? PorcentajeVentaMensual { get => Ventas != 0 ? Mensual / Ventas * 100 : 0; }
+        public double? Comision { get => 0; }
+        public double? AcumuladoMensualComision { get => Mensual + Comision; }
+        public double? PorcentajeVentaAcumuladoMensualComision { get => Ventas != 0 ? AcumuladoMensualComision / Ventas * 100 : 0; }
+        public double? Intereses { get => 0; }
+        public double? AcumuladoIntereses { get => 0; }
+        public double? PorcentajeAcumuladoIntereses { get => 0; }
+
     }
+
+
+   public class TotalsEntity
+    {
+        public double? totalVenta { get; set; }
+        public double? totalCosto{ get; set; }
+        public double? totalMargen { get; set; }
+        public double? totalPorcVenta { get; set; }
+        public double? totalDirecto { get; set; }
+        public double? totalPorcVtaDirect { get; set; }
+        public double? totalIndirecto { get; set; }
+        public double? totalPorcVtaIndirect { get; set; }
+        public double? totalTotalGastos { get; set; }
+        public double? totalMensual { get; set; }
+        public double? totalPorcVtaMensual { get; set; }
+        public double? totalComisiones { get; set; }
+        public double? totalAcumuladoMensualComision { get; set; }
+        public double? totalPorcVtaAcumuladoMensualComision { get; set; }
+        public double? totalIntereses { get; set; }
+        public double? totalAcumuladoIntereses { get; set; }
+        public double? totalPorcAcumuladoIntereses { get; set; }
+}
 }
