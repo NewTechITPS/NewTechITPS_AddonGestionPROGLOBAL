@@ -20,10 +20,17 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 {
+
+    public enum NameDataTables
+    {
+        tablaVentas,
+        tablaTotalVentas,
+        tablaGastos,
+        tablaTotalGastos
+    }
 
     public class VentanaGestionService
     {
@@ -39,14 +46,26 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         private static string _itemDateTo = "Item_1";
         private static string _itemBtnFilter = "Item_4";
         private static string _itemBtnExport = "Item_5";
-        private static string _itemSolapaGastos = "Item_7";
-        private static string _itemGridGastos = "Item_8";
-        private static string _itemGridTotales = "Item_10";
-        private static string _itemSolapaVentas = "Item_11";
-        private static string _itemGridVentas = "Item_12";
+        private static string _itemBtnApplyCommision = "Item_18";
         private static string _itemBtnSave = "Item_14";
         private static string _itemGridSavedAjustes = "Item_15";
         private static string _itemLoading = "Item_19";
+        private static string _itemSolapaVentas = "Item_11";
+        private static string _itemSolapaGastos = "Item_7";
+        private static string _itemSolapaTotalVentas = "Item_9";
+        private static string _itemSolapaTotalGastos = "Item_17";
+        private static string _itemGridGastos = "Item_8";
+        private static string _itemGridTotalVentas = "Item_10";
+        private static string _itemGridVentas = "Item_12";
+        private static string _itemGridTotalGastos = "Item_20";
+
+
+        private static string _colAcumulado = "Acumulado (1)";
+        private static string _colPorcAcum = "% s. ventas (5)";
+        private static string _colMensual = "Mensual";
+        private static string _colComision = "Comisiones";
+        private static string _colVentas = "Ventas";
+        private static string _colDetalle = "Detalle";
 
         public static void CreateMenu()
         {
@@ -75,8 +94,6 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         {
             try
             {
-
-
                 FormCreationParams p = ConnectionSDK.UIAPI!.CreateObject(BoCreatableObjectType.cot_FormCreationParams);
                 p.UniqueID = "VentanaGestion_" + _countForm.ToString();
 
@@ -130,11 +147,11 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                 try
                 {
-                    oDataTableGastos = _oForm.DataSources.DataTables.Item("tableGastos");
+                    oDataTableGastos = _oForm.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
                 }
                 catch
                 {
-                    oDataTableGastos = _oForm.DataSources.DataTables.Add("tableGastos");
+                    oDataTableGastos = _oForm.DataSources.DataTables.Add(NameDataTables.tablaGastos.ToString());
                 }
                 oDataTableGastos.Clear();
                 oDataTableGastos.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', 0)");
@@ -161,11 +178,12 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
 
         }
-        
-        
+
+
         public static void RefreshDataVentasGrid()
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
                 string formatDate = "yyyyMMdd";
@@ -188,11 +206,11 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                 try
                 {
-                    oDataTableVentas = _oForm.DataSources.DataTables.Item("tableVentas");
+                    oDataTableVentas = _oForm.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
                 }
                 catch
                 {
-                    oDataTableVentas = _oForm.DataSources.DataTables.Add("tableVentas");
+                    oDataTableVentas = _oForm.DataSources.DataTables.Add(NameDataTables.tablaVentas.ToString());
                 }
                 oDataTableVentas.Clear();
                 oDataTableVentas.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', 1)");
@@ -215,9 +233,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
-   
+
             }
-}
+        }
 
        
         public static void TruncateUDOGestionAjuste()
@@ -269,8 +287,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 for (int i = 0; i < GRIDGastos.Rows.Count; i++)
                 {
 
-                    string account = GRIDGastos.DataTable.Columns.Item(5).Cells.Item(i).Value;
-                    double ajuste = GRIDGastos.DataTable.Columns.Item(8).Cells.Item(i).Value;
+                    string account = GRIDGastos.DataTable.Columns.Item(6).Cells.Item(i).Value;
+                    double ajuste = GRIDGastos.DataTable.Columns.Item(9).Cells.Item(i).Value;
 
                     if (ajuste > 0)
                     {
@@ -336,9 +354,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                 ETDateFrom.Value = null;
                 ETDateTo.Value = null;
-                _oForm.DataSources.DataTables.Item("tableGastos").Clear();
-                _oForm.DataSources.DataTables.Item("tableVentas").Clear();
-                _oForm.DataSources.DataTables.Item("tableTotales").Clear();
+                _oForm.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString()).Clear();
+                _oForm.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString()).Clear();
+                _oForm.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString()).Clear();
+                _oForm.DataSources.DataTables.Item(NameDataTables.tablaTotalGastos.ToString()).Clear();
 
             }
             finally
@@ -352,7 +371,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         {
 
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item("tableGastos");
+            SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
 
 
             DataColumnCollection cols = table!.Columns;
@@ -368,7 +387,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public static void CreateColumnsInDataTableSales(System.Data.DataTable? table)
         {
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item("tableVentas");
+            SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
 
             DataColumnCollection cols = table!.Columns;
             for (int col = 0; col < dtVentas.Columns.Count; col++)
@@ -383,7 +402,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public static void CreateColumnsInDataTableTotales(System.Data.DataTable? table)
         {
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item("tableTotales");
+            SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString());
 
             DataColumnCollection cols = table!.Columns;
             for (int col = 0; col < dtTotales.Columns.Count; col++)
@@ -400,7 +419,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         {
             try { 
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item("tableGastos");
+                SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
                 for (int r = 0; r < dtGastos.Rows.Count; r++)
                 {
                     DataRow rowSys = sheet.DataTableExpenses!.NewRow();
@@ -422,7 +441,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         {
             try { 
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item("tableVentas");
+                SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
                 for (int r = 0; r < dtVentas.Rows.Count; r++)
                 {
                     DataRow rowSys = sheet.DataTableSales!.NewRow();
@@ -444,16 +463,16 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         {
             try {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item("tableTotales");
+                SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString());
                 for (int r = 0; r < dtTotales.Rows.Count; r++)
                 {
-                    DataRow rowSys = sheet.DataTableTotals!.NewRow();
+                    DataRow rowSys = sheet.DataTableTotalsSales!.NewRow();
 
                     for (int c = 0; c < dtTotales.Columns.Count; c++)
                     {
                         rowSys[c] = dtTotales.GetValue(c, r)?.ToString();
                     }
-                    sheet.DataTableTotals.Rows.Add(rowSys);
+                    sheet.DataTableTotalsSales.Rows.Add(rowSys);
                 }
             }
             finally
@@ -491,11 +510,13 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
             sheet.DataTableExpenses = new System.Data.DataTable("SysTableGastos");
             sheet.DataTableSales = new System.Data.DataTable("SysTableVentas");
-            sheet.DataTableTotals = new System.Data.DataTable("SysTableTotales");
+            sheet.DataTableTotalsSales = new System.Data.DataTable("SysTableTotalesSales");
+            sheet.DataTableTotalsExpenses = new System.Data.DataTable("SysTableTotalesExpenses");
 
             sheet.TitleExpenses = "GASTOS";
             sheet.TitleSales = "VENTAS";
-            sheet.TitleTotals = "TOTALES";
+            sheet.TitleTotalsSales = "TOTALES VENTAS";
+            sheet.TitleTotalsExpenses = "TOTALES GASTOS";
 
             return sheet;
         }
@@ -516,17 +537,25 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         public static string GetPathToSaveFile(string? filename)
         {
+            System.Windows.Forms.Form form = new System.Windows.Forms.Form();
+            form.TopMost = true;
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             saveFileDialog.Filter = "Archivos Excel (*.xlsx)|*.xlsx|Todos los archivos (*.*)|*.*";
             saveFileDialog.Title = "Guardar archivo como";
             saveFileDialog.FileName = filename;
 
+
             string pathFilename = string.Empty;
 
             var thread = new Thread(() =>
             {
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                if (saveFileDialog.ShowDialog(new System.Windows.Forms.Form()
+                {
+                    TopMost = true,
+                    TopLevel = true,
+                    WindowState = FormWindowState.Minimized
+                }) == DialogResult.OK)
                 {
                     pathFilename = saveFileDialog.FileName;
                 }
@@ -537,6 +566,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             thread.Join();
 
             return pathFilename;
+
         }
 
         public static void ExportExcel(ReportExcelFormat reportExcelFormat, string pathFile)
@@ -561,9 +591,16 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 IXLCell LastCell2 = sheetExcel.Column(1).LastCellUsed();
                 int rowLastDataSales = LastCell2.Address.RowNumber;
 
-                sheetExcel.Cell(rowLastDataSales + 2, 1).SetValue(sheet.TitleTotals);
+                sheetExcel.Cell(rowLastDataSales + 2, 1).SetValue(sheet.TitleTotalsSales);
                 sheetExcel.Cell(rowLastDataSales + 2, 1).Style.Font.Bold = true;
-                sheetExcel.Cell(rowLastDataSales + 4, 1).InsertTable(sheet.DataTableTotals);
+                sheetExcel.Cell(rowLastDataSales + 4, 1).InsertTable(sheet.DataTableTotalsSales);
+
+                IXLCell LastCell3 = sheetExcel.Column(1).LastCellUsed();
+                int rowLastDataGastos = LastCell3.Address.RowNumber;
+
+                sheetExcel.Cell(rowLastDataGastos + 2, 1).SetValue(sheet.TitleTotalsExpenses);
+                sheetExcel.Cell(rowLastDataGastos + 2, 1).Style.Font.Bold = true;
+                sheetExcel.Cell(rowLastDataGastos + 4, 1).InsertTable(sheet.DataTableTotalsExpenses);
 
                 sheetExcel.Columns().AdjustToContents();
             }
@@ -571,7 +608,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             workbook.SaveAs(pathFile);
         }
 
-        public static List<VentasGastoTotales> GetDataTotals(ReportExcelFormatSheet sheet)
+        public static List<VentasGastoTotales> GetDataTotalsVentas(ReportExcelFormatSheet sheet)
         {
             var expensesData = sheet.DataTableExpenses!.AsEnumerable();
             var colsGastos = sheet.DataTableExpenses!.Columns.Cast<System.Data.DataColumn>().Where(col => Regex.IsMatch(col.ColumnName, @"Di$|In$")).ToList();
@@ -652,13 +689,13 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             return totals.ToList();
         }
 
-        public static void RefreshDataTotalesGrid(ReportExcelFormatSheet sheet)
+        public static List<TotalsVentasEntity>? RefreshDataTotalesVentasGrid(ReportExcelFormatSheet sheet)
         {
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
-                string formatDate = "yyyyMMdd";
+                string formatDate = "yyyyMMdd"; 
                 string formatDateSP = "yyyy-MM-dd";
 
                 SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
@@ -671,75 +708,201 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 string sDateTo = ETDateTo.Value;
                 string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
-                item = _oForm.Items.Item(_itemGridTotales);
-                Grid GRIDTotales = item.Specific;
+                item = _oForm.Items.Item(_itemGridTotalVentas);
+                Grid GRIDTotalesVentas = item.Specific;
 
-                SAPbouiCOM.DataTable oDataTableTotales;
+                SAPbouiCOM.DataTable oDataTableTotalesVentas;
 
                 try
                 {
-                    oDataTableTotales = _oForm.DataSources.DataTables.Item("tableTotales");
+                    oDataTableTotalesVentas = _oForm.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString());
                 }
                 catch
                 {
-                    oDataTableTotales = _oForm.DataSources.DataTables.Add("tableTotales");
-                }
-                oDataTableTotales.Clear();
+                    oDataTableTotalesVentas = _oForm.DataSources.DataTables.Add(NameDataTables.tablaTotalVentas.ToString());
+                } 
 
-                List<string> columns = ["Ventas", "Costos", "Margen", "% s. ventas (1)", "Directos", "% s. ventas (2)", "Indirectos",
-                    "% s. ventas (3)", "T. Gastos", "Mensual", "% s. ventas (4)" , "Comisiones", "Acumulado (1)", "% s. ventas (5)", "Intereses", "Acumulado (2)", "% s. ventas (6)"];
+                oDataTableTotalesVentas.Clear();
 
-                oDataTableTotales.Columns.Add("Detalle", BoFieldsType.ft_AlphaNumeric);
-                columns.ForEach(colName => oDataTableTotales.Columns.Add(colName, BoFieldsType.ft_Float));
+                List<string> columns = ["Ventas", "Costos", "Margen", "% s. ventas (1)", "Directos", "% s. ventas (2)", "Indirectos", "% s. ventas (3)", "T. Gastos","Mensual", "% s. ventas (4)",
+                    "Comisiones", "Acumulado (1)", "% s. ventas (5)", "Intereses", "Acumulado (2)", "% s. ventas (6)"];
 
-                var dataTotals = GetDataTotals(sheet);
+                oDataTableTotalesVentas.Columns.Add("Detalle", BoFieldsType.ft_AlphaNumeric);
+                columns.ForEach(colName => oDataTableTotalesVentas.Columns.Add(colName, BoFieldsType.ft_Float));
+
+                var dataTotals = GetDataTotalsVentas(sheet);
                 int countIndex = 0;
 
                 // INDUSTRIA
-                var totals_IND = LoadDataInDataTable(dataTotals, "^IND", oDataTableTotales, countIndex);
-                countIndex = oDataTableTotales.Rows.Count;
+                var totals_IND = LoadDataInDataTable(dataTotals, "^IND", oDataTableTotalesVentas, countIndex);
+                countIndex = oDataTableTotalesVentas.Rows.Count;
 
                 // AGRO
-                var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", oDataTableTotales, countIndex);
-                countIndex = oDataTableTotales.Rows.Count;
+                var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", oDataTableTotalesVentas, countIndex);
+                countIndex = oDataTableTotalesVentas.Rows.Count;
 
                 // TOTAL COMPONENTES
-                LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, oDataTableTotales, countIndex);
+                var totalComponente = LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, oDataTableTotalesVentas, countIndex);
                 countIndex++;
 
-                //// EQUIPO TECNICO
-                var totals_ET = LoadDataInDataTable(dataTotals, "^ET", oDataTableTotales, countIndex);
-                countIndex = oDataTableTotales.Rows.Count;
+                LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(totalComponente);
+
+                // EQUIPO TECNICO
+                var totals_ET = LoadDataInDataTable(dataTotals, "^ET", oDataTableTotalesVentas, countIndex);
+                countIndex = oDataTableTotalesVentas.Rows.Count;
 
                 // TOTAL PROGLOBAL
-                LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, oDataTableTotales, countIndex);
+                var totalProglobal = LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, oDataTableTotalesVentas, countIndex);
 
+                GRIDTotalesVentas.DataTable = oDataTableTotalesVentas;
 
-                GRIDTotales.DataTable = oDataTableTotales;
+                SetterColorInRows_InSolapaTotalsSales(GRIDTotalesVentas);
 
-                for (int i = 0; i < GRIDTotales.DataTable.Rows.Count; i++)
-                {
-                    string detalle = GRIDTotales.DataTable.GetValue(0, i);
-                    switch (detalle)
-                    {
-                        case "DIVISION INDUSTRIA":
-                        case "DIVISION AGRO":
-                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16777138);
-                            break;
-                        case "TOTAL COMPONENTES":
-                        case "DIVISION EQUIPO TECNICO":
-                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16776960);
-                            break;
-                        case "TOTAL PROGLOBAL":
-                            GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 14483330);
-                            break;
-                    }
+                SetterColumnCommissionEditable_InSolapaTotalsSales(GRIDTotalesVentas);
 
-                }
+                return [totals_IND, totals_AGRO, totals_ET, totalComponente, totalProglobal];
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                NotificationService.Error(ex.Message);
+            }
+            finally
+            {
+                MarshalGC.ReleaseComObject(_oForm);
+            }
+            return null;
+        }
+        public static void RefreshDataTotalesGastosGrid(List<TotalsVentasEntity> totals)
+        {
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+                
+                SAPbouiCOM.DataTable oDataTableTotalesGastos;
+
+                
+
+                try
+                {
+                    oDataTableTotalesGastos = _oForm.DataSources.DataTables.Item(NameDataTables.tablaTotalGastos.ToString());
+                }
+                catch
+                {
+                    oDataTableTotalesGastos = _oForm.DataSources.DataTables.Add(NameDataTables.tablaTotalGastos.ToString());
+                }
+
+                oDataTableTotalesGastos.Clear();
+                oDataTableTotalesGastos.ExecuteQuery($"CALL INFORME_EA_GESTION(CURRENT_DATE, CURRENT_DATE, 2)");
+
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+                SAPbouiCOM.Grid GRIDGastos = _oForm.Items.Item(_itemGridGastos).Specific;
+
+                List<DataTotalsExpenses> LinQTableGastos = new();
+                for(int r = 0; r < GRIDGastos.Rows.Count; r++)
+                {
+                    string codExternal = GRIDGastos.DataTable.GetValue("Cod. Ext", r);
+
+                    double INDDirect = GRIDGastos.DataTable.GetValue("Industria Directo", r);
+                    double AGRODirect = GRIDGastos.DataTable.GetValue("Agro Directo", r);
+                    double ETDirect = GRIDGastos.DataTable.GetValue("Et (Equipo tecnico) Directo", r);
+
+                    double INDIndirect = GRIDGastos.DataTable.GetValue("Industria Indirecto", r);
+                    double AGROIndirect = GRIDGastos.DataTable.GetValue("Agro Indirecto", r);
+                    double ETIndirect = GRIDGastos.DataTable.GetValue("Et (Equipo tecnico) Indirecto", r);
+
+                    var data = new DataTotalsExpenses()
+                    {
+                        CodExternal = codExternal,
+                        INDDirect = INDDirect,
+                        AGRODirect = AGRODirect,
+                        ETDirect = ETDirect,
+                        INDIndirect = INDIndirect,
+                        AGROIndirect = AGROIndirect,
+                        ETIndirect = ETIndirect
+                    };
+
+                    LinQTableGastos.Add(data);
+                }
+
+                var dataTotalsExpensesGroup = LinQTableGastos
+                .Where(d => !string.IsNullOrEmpty(d.CodExternal))
+                .GroupBy(d => d.CodExternal)
+                .Select(d =>
+                {
+                    return new DataTotalsExpenses()
+                    {
+                        CodExternal = d.Max(data => data.CodExternal),
+                        INDDirect = d.Sum(data => data.INDDirect),
+                        AGRODirect = d.Sum(data => data.AGRODirect),
+                        ETDirect = d.Sum(data => data.ETDirect),
+                        INDIndirect = d.Sum(data => data.INDIndirect),
+                        AGROIndirect = d.Sum(data => data.AGROIndirect),
+                        ETIndirect = d.Sum(data => data.ETIndirect),
+                    };
+                }).ToList();
+
+
+                var totalsSalesDIV_IND = totals[0];
+                var totalsSalesDIV_AGRO = totals[1];
+                var totalsSalesDIV_ET = totals[2];
+                var totalsSalesDIV_COMPONENTE = totals[3];
+                var totalsSalesDIV_PROGLOBAL = totals[4];
+
+                for (int r = 0; r < oDataTableTotalesGastos.Rows.Count; r++)
+                {
+                    string codExternal = oDataTableTotalesGastos.GetValue("Cod. Ext", r);
+                    var data = dataTotalsExpensesGroup?.Find(d => d.CodExternal == codExternal) ?? null;
+
+                    if (data != null)
+                    {
+                        double directo = data.INDDirect + data.AGRODirect + data.ETDirect;
+                        double indirecto = data.INDIndirect + data.AGROIndirect + data.ETIndirect;
+                        double total = directo + indirecto;
+
+                        double porcVenta = totalsSalesDIV_PROGLOBAL.totalVenta != 0.00 ? total / totalsSalesDIV_PROGLOBAL.totalVenta * 100 : 0.00;
+
+                        oDataTableTotalesGastos.SetValue("Directo", r, directo);
+                        oDataTableTotalesGastos.SetValue("Indirecto", r, indirecto);
+                        oDataTableTotalesGastos.SetValue("Total", r, total);
+                        oDataTableTotalesGastos.SetValue("% s/ ventas", r, porcVenta);
+
+
+                        double importeIND = data.INDDirect + data.INDIndirect;
+                        double importeAGRO = data.AGRODirect + data.AGROIndirect;
+                        double importeET = data.ETDirect + data.ETIndirect;
+
+                        oDataTableTotalesGastos.SetValue("IND Importe", r, importeIND);
+                        oDataTableTotalesGastos.SetValue("AGRO Importe", r, importeAGRO);
+                        oDataTableTotalesGastos.SetValue("ET Importe", r, importeET);
+
+                        double porcIND = totalsSalesDIV_IND.totalVenta != 0.00 ? importeIND / totalsSalesDIV_IND.totalVenta * 100 : 0.00;
+                        double porcAGRO = totalsSalesDIV_AGRO.totalVenta != 0.00 ? importeAGRO / totalsSalesDIV_AGRO.totalVenta * 100 : 0.00;
+                        //double porcET = totalsSalesDIV_ET.totalVenta != 0.00 ? importeET / totalsSalesDIV_ET.totalVenta * 100 : 0.00;
+
+                        oDataTableTotalesGastos.SetValue("IND % s/ ventas", r, porcIND);
+                        oDataTableTotalesGastos.SetValue("AGRO % s/ ventas", r, porcAGRO);
+                        //oDataTableTotalesGastos.SetValue("ET Importe", r, importeET);
+
+
+                    }
+
+                }
+
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
+                GRIDTotalesGastos.DataTable = oDataTableTotalesGastos;
+
+                GRIDTotalesGastos.Item.Enabled = false;
+
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Error(ex.Message);
             }
             finally
             {
@@ -747,8 +910,80 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
         }
 
+        public static void SetterColorInRows_InSolapaTotalsSales(SAPbouiCOM.Grid GRIDTotales)
+        {
+            for (int i = 0; i < GRIDTotales.DataTable.Rows.Count; i++)
+            {
+                string detalle = GRIDTotales.DataTable.GetValue(0, i);
+                switch (detalle)
+                {
+                    case "DIVISION INDUSTRIA":
+                    case "DIVISION AGRO":
+                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16777138);
+                        break;
+                    case "TOTAL COMPONENTES":
+                    case "DIVISION EQUIPO TECNICO":
+                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 16776960);
+                        break;
+                    case "TOTAL PROGLOBAL":
+                        GRIDTotales.CommonSetting.SetRowBackColor(i + 1, 14483330);
+                        break;
+                }
+            }
+        }
 
-        public static TotalsEntity LoadDataInDataTable(List<VentasGastoTotales> dataTotals, string regexEntity, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        public static void SetterColumnCommissionEditable_InSolapaTotalsSales(SAPbouiCOM.Grid GRIDTotales)
+        {
+            for (int i = 0; i < GRIDTotales.Columns.Count; i++)
+            {
+
+                GridColumn col = GRIDTotales.Columns.Item(i);
+
+                col.Editable = col.UniqueID switch
+                {
+                    "Comisiones" => true,
+                    _ => false,
+                };
+            }
+        }
+
+        public static void LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(TotalsVentasEntity totalComponente)
+        {
+            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+            SAPbouiCOM.Grid GVtas = _oForm.Items.Item(_itemGridVentas).Specific;
+            for (int col = 0; col < GVtas.Columns.Count; col++)
+            {
+                string columnName = GVtas.DataTable.Columns.Item(col).Name;
+                string colCCName = Regex.Replace(columnName, "DIRECTO GASTO|INDIRECTO GASTO|%/SVENTAS GASTO|NETO", "").Trim();
+
+                bool isDirecto = Regex.IsMatch(columnName, "^DIRECTO GASTO");
+                bool isIndirecto = Regex.IsMatch(columnName, "^INDIRECTO GASTO");
+                bool isPorcVtasGast = Regex.IsMatch(columnName, "^%/SVENTAS GASTO");
+                bool isNETO = Regex.IsMatch(columnName, "^NETO");
+
+                if (isDirecto || isIndirecto || isPorcVtasGast || isNETO)
+                {
+                    for (int row = 0; row < GVtas.Rows.Count; row++)
+                    {
+
+                        double valueVentas = GVtas.DataTable.GetValue("Venta " + colCCName, row);
+                        double directoGasto = valueVentas * totalComponente.totalPorcVtaDirect / 100;
+                        double indirectoGasto = valueVentas * totalComponente.totalPorcVtaIndirect / 100;
+                        double porcVtasGasto = valueVentas != 0 ? (directoGasto + indirectoGasto) / valueVentas * 100 : 0;
+
+                        double margenVentas = GVtas.DataTable.GetValue("Margen " + colCCName, row);
+                        double neto = margenVentas - Math.Abs(directoGasto + indirectoGasto);
+
+                        GVtas.DataTable.SetValue("DIRECTO GASTO " + colCCName, row, directoGasto);
+                        GVtas.DataTable.SetValue("INDIRECTO GASTO " + colCCName, row, indirectoGasto);
+                        GVtas.DataTable.SetValue("%/SVENTAS GASTO " + colCCName, row, porcVtasGasto);
+                        GVtas.DataTable.SetValue("NETO " + colCCName, row, neto);
+                    }
+                }
+            }
+        }
+
+        public static TotalsVentasEntity LoadDataInDataTable(List<VentasGastoTotales> dataTotals, string regexEntity, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
         {
             string Detalle = regexEntity switch
             {
@@ -772,6 +1007,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             var totalTotalGastos = totalDirecto + totalIndirecto;   // Directo + Indirecto 
 
             var totalMensual = totalMargen - totalDirecto - totalIndirecto; // MargenVentas - Directo - Indirecto
+
             var totalPorcVtaMensual = totalVenta != 0 ? totalMensual / totalVenta * 100 : 0; // Mensual / Ventas * 100
             var totalComisiones = records.Sum(r => r.Comision); // 0 (manual)
             var totalAcumuladoMensualComision = totalMensual + totalComisiones;  // Mensual + Comision
@@ -836,52 +1072,52 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 countIndex++;
             }
 
-            return new TotalsEntity()
+            return new TotalsVentasEntity()
             {
-                totalVenta = totalVenta,
-                totalCosto = totalCosto,
-                totalMargen = totalMargen,
-                totalPorcVenta = totalPorcVenta,
-                totalDirecto = totalDirecto,
-                totalPorcVtaDirect = totalPorcVtaDirect,
-                totalIndirecto = totalIndirecto,
-                totalPorcVtaIndirect = totalPorcVtaIndirect,
-                totalTotalGastos = totalTotalGastos,
-                totalMensual = totalMensual,
-                totalPorcVtaMensual = totalPorcVtaMensual,
-                totalComisiones = totalComisiones,
-                totalAcumuladoMensualComision = totalAcumuladoMensualComision,
-                totalPorcVtaAcumuladoMensualComision = totalPorcVtaAcumuladoMensualComision,
-                totalIntereses = totalIntereses,
-                totalAcumuladoIntereses = totalAcumuladoIntereses,
-                totalPorcAcumuladoIntereses = totalPorcAcumuladoIntereses,         
+                totalVenta = (double)totalVenta!,
+                totalCosto = (double)totalCosto!,
+                totalMargen = (double)totalMargen!,
+                totalPorcVenta = (double)totalPorcVenta!,
+                totalDirecto = (double)totalDirecto!,
+                totalPorcVtaDirect = (double)totalPorcVtaDirect!,
+                totalIndirecto = (double)totalIndirecto!,
+                totalPorcVtaIndirect = (double)totalPorcVtaIndirect!,
+                totalTotalGastos = (double)totalTotalGastos!,
+                totalMensual = (double)totalMensual!,
+                totalPorcVtaMensual = (double)totalPorcVtaMensual!,
+                totalComisiones = (double)totalComisiones!,
+                totalAcumuladoMensualComision = (double)totalAcumuladoMensualComision!,
+                totalPorcVtaAcumuladoMensualComision = (double)totalPorcVtaAcumuladoMensualComision!,
+                totalIntereses = (double)totalIntereses!,
+                totalAcumuladoIntereses = (double)totalAcumuladoIntereses!,
+                totalPorcAcumuladoIntereses = (double)totalPorcAcumuladoIntereses!,
             };
         }
 
-        public static void LoadInTable_TOTALCOMPONENTES(TotalsEntity totals_IND, TotalsEntity totals_AGRO, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        public static TotalsVentasEntity LoadInTable_TOTALCOMPONENTES(TotalsVentasEntity totals_IND, TotalsVentasEntity totals_AGRO, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
         {
-            // TOTAL COMPONENTES
-            var totalComponentes = new
-            {
-                Detalle = "TOTAL COMPONENTES",
-                Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta,
-                Costos = totals_IND.totalCosto + totals_AGRO.totalCosto,
-                Margen = totals_IND.totalMargen + totals_AGRO.totalMargen,
-                PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta,
-                Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto,
-                PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect,
-                Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto,
-                PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect,
-                TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos,
-                Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual,
-                PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual,
-                Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones,
-                AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision,
-                PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision,
-                Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses,
-                AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses,
-                PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses
-            };
+                // TOTAL COMPONENTES
+                var totalComponentes = new
+                {
+                    Detalle = "TOTAL COMPONENTES",
+                    Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta,
+                    Costos = totals_IND.totalCosto + totals_AGRO.totalCosto,
+                    Margen = totals_IND.totalMargen + totals_AGRO.totalMargen,
+                    PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta,
+                    Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto,
+                    PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect,
+                    Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto,
+                    PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect,
+                    TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos,
+                    Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual,
+                    PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual,
+                    Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones,
+                    AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision,
+                    PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision,
+                    Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses,
+                    AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses,
+                    PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses
+                };
 
                 oDataTableTotales.Rows.Add();
                 oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
@@ -905,14 +1141,33 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
                 oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
                 oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
-                
-            }
 
+            return new TotalsVentasEntity()
+            {
+                totalVenta = totalComponentes.Ventas,
+                totalCosto = totalComponentes.Costos,
+                totalMargen = totalComponentes.Margen,
+                totalPorcVenta = totalComponentes.PorcVenta_1,
+                totalDirecto = totalComponentes.Directo,
+                totalPorcVtaDirect = totalComponentes.PorcVenta_2,
+                totalIndirecto = totalComponentes.Indirecto,
+                totalPorcVtaIndirect = totalComponentes.PorcVenta_3,
+                totalTotalGastos = totalComponentes.TotalGastos,
+                totalMensual = totalComponentes.Mensual,
+                totalPorcVtaMensual = totalComponentes.PorcentajeVentaMensual,
+                totalComisiones = totalComponentes.Comisiones,
+                totalAcumuladoMensualComision = totalComponentes.AcumuladoMensualComisiones,
+                totalPorcVtaAcumuladoMensualComision = totalComponentes.PorcentajeVentaAcumuladoMensualComisiones,
+                totalIntereses = totalComponentes.Intereses,
+                totalAcumuladoIntereses = totalComponentes.AcumuladoIntereses,
+                totalPorcAcumuladoIntereses = totalComponentes.PorcentageAcumuladoIntereses,
+            };
+        }
 
-        public static void LoadInTable_TOTALPROGLOBAL(TotalsEntity totals_IND, TotalsEntity totals_AGRO, TotalsEntity totals_ET, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        public static TotalsVentasEntity LoadInTable_TOTALPROGLOBAL(TotalsVentasEntity totals_IND, TotalsVentasEntity totals_AGRO, TotalsVentasEntity totals_ET, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
         {
             // TOTAL COMPONENTES
-            var totalComponentes = new
+            var totalProglobal = new
             {
                 Detalle = "TOTAL PROGLOBAL",
                 Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta + totals_ET.totalVenta,
@@ -935,29 +1190,255 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             };
 
             oDataTableTotales.Rows.Add();
-            oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
-            oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
-            oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
-            oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
-            oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
+            oDataTableTotales.SetValue("Detalle", countIndex, totalProglobal.Detalle);
+            oDataTableTotales.SetValue("Ventas", countIndex, totalProglobal.Ventas);
+            oDataTableTotales.SetValue("Costos", countIndex, totalProglobal.Costos);
+            oDataTableTotales.SetValue("Margen", countIndex, totalProglobal.Margen);
+            oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalProglobal.PorcVenta_1);
 
-            oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
-            oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
-            oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
-            oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
-            oDataTableTotales.SetValue("T. Gastos", countIndex, totalComponentes.TotalGastos);
+            oDataTableTotales.SetValue("Directos", countIndex, totalProglobal.Directo);
+            oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalProglobal.PorcVenta_2);
+            oDataTableTotales.SetValue("Indirectos", countIndex, totalProglobal.Indirecto);
+            oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalProglobal.PorcVenta_3);
+            oDataTableTotales.SetValue("T. Gastos", countIndex, totalProglobal.TotalGastos);
 
-            oDataTableTotales.SetValue("Mensual", countIndex, totalComponentes.Mensual);
-            oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalComponentes.PorcentajeVentaMensual);
-            oDataTableTotales.SetValue("Comisiones", countIndex, totalComponentes.Comisiones);
-            oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalComponentes.AcumuladoMensualComisiones);
-            oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalComponentes.PorcentajeVentaAcumuladoMensualComisiones);
+            oDataTableTotales.SetValue("Mensual", countIndex, totalProglobal.Mensual);
+            oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalProglobal.PorcentajeVentaMensual);
+            oDataTableTotales.SetValue("Comisiones", countIndex, totalProglobal.Comisiones);
+            oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalProglobal.AcumuladoMensualComisiones);
+            oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalProglobal.PorcentajeVentaAcumuladoMensualComisiones);
 
-            oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
-            oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
-            oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
+            oDataTableTotales.SetValue("Intereses", countIndex, totalProglobal.Intereses);
+            oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalProglobal.AcumuladoIntereses);
+            oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalProglobal.PorcentageAcumuladoIntereses);
 
+            return new TotalsVentasEntity()
+            {
+                totalVenta = totalProglobal.Ventas,
+                totalCosto = totalProglobal.Costos,
+                totalMargen = totalProglobal.Margen,
+                totalPorcVenta = totalProglobal.PorcVenta_1,
+                totalDirecto = totalProglobal.Directo,
+                totalPorcVtaDirect = totalProglobal.PorcVenta_2,
+                totalIndirecto = totalProglobal.Indirecto,
+                totalPorcVtaIndirect = totalProglobal.PorcVenta_3,
+                totalTotalGastos = totalProglobal.TotalGastos,
+                totalMensual = totalProglobal.Mensual,
+                totalPorcVtaMensual = totalProglobal.PorcentajeVentaMensual,
+                totalComisiones = totalProglobal.Comisiones,
+                totalAcumuladoMensualComision = totalProglobal.AcumuladoMensualComisiones,
+                totalPorcVtaAcumuladoMensualComision = totalProglobal.PorcentajeVentaAcumuladoMensualComisiones,
+                totalIntereses = totalProglobal.Intereses,
+                totalAcumuladoIntereses = totalProglobal.AcumuladoIntereses,
+                totalPorcAcumuladoIntereses = totalProglobal.PorcentageAcumuladoIntereses,
+            };
         }
+
+        public static void CalculateTotals_Comisiones_Acumulado_PorcAcumulado()
+        {
+           
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+                Grid GTotales = _oForm.Items.Item(_itemGridTotalVentas).Specific;
+
+                if (GTotales.Rows.Count > 0)
+                {
+
+                    SAPbouiCOM.DataColumn colDetalle = GTotales.DataTable.Columns.Item(_colDetalle);
+                    SAPbouiCOM.DataColumn colComision = GTotales.DataTable.Columns.Item(_colComision);
+                    SAPbouiCOM.DataColumn colAcumulado = GTotales.DataTable.Columns.Item(_colAcumulado);
+                    SAPbouiCOM.DataColumn colPorcAcumulado = GTotales.DataTable.Columns.Item(_colPorcAcum);
+
+                    _oForm.Freeze(true);
+
+                    for (int i = 0; i < colDetalle.Cells.Count; i++)
+                    {
+
+                        DataCell cellDetalle = colDetalle.Cells.Item(i);
+
+                        double comisionTotal = 0;
+                        double acumuladoTotal = 0;
+                        double porcAcumuladoTotal = 0;
+                        // INDUSTRIA
+                        if (cellDetalle.Value == "DIVISION INDUSTRIA")
+                        {
+                            for (int j = 0; j < colDetalle.Cells.Count; j++)
+                            {
+
+                                DataCell celdaDetalle = colDetalle.Cells.Item(j);
+
+                                if (Regex.IsMatch(celdaDetalle.Value!, "^IND"))
+                                {
+                                    double valueComision = colComision.Cells.Item(j).Value;
+                                    double valueAcumulado = colAcumulado.Cells.Item(j).Value;
+                                    double valuePorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                    comisionTotal += valueComision;
+                                    acumuladoTotal += valueAcumulado;
+                                    porcAcumuladoTotal += valuePorcAcumulado;
+                                }
+                            }
+                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+                        }
+
+                        // AGRO
+                        if (cellDetalle.Value == "DIVISION AGRO")
+                        {
+
+                            for (int j = 0; j < colDetalle.Cells.Count; j++)
+                            {
+                                DataCell celdaDetalle = colDetalle.Cells.Item(j);
+                                double valueComision = colComision.Cells.Item(j).Value;
+                                double valueAcumulado = colAcumulado.Cells.Item(j).Value;
+                                double valuePorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                if (Regex.IsMatch(celdaDetalle.Value!, "^AGRO"))
+                                {
+                                    comisionTotal += valueComision;
+                                    acumuladoTotal += valueAcumulado;
+                                    porcAcumuladoTotal += valuePorcAcumulado;
+                                }
+                            }
+                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+
+                        }
+
+                        // EQUIPO TECNICO
+                        if (cellDetalle.Value == "DIVISION EQUIPO TECNICO")
+                        {
+
+                            for (int j = 0; j < colDetalle.Cells.Count; j++)
+                            {
+                                DataCell celdaDetalle = colDetalle.Cells.Item(j);
+                                double valueComision = colComision.Cells.Item(j).Value;
+                                double valueAcumulado = colAcumulado.Cells.Item(j).Value;
+                                double valuePorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                if (Regex.IsMatch(celdaDetalle.Value!, "^ET"))
+                                {
+                                    comisionTotal += valueComision;
+                                    acumuladoTotal += valueAcumulado;
+                                    porcAcumuladoTotal += valuePorcAcumulado;
+                                }
+                            }
+                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+
+                        }
+
+                        // TOTAL COMPONENTES
+                        if (cellDetalle.Value == "TOTAL COMPONENTES")
+                        {
+                            double totalComponenteComision = 0;
+                            double totalComponenteAcumulado = 0;
+                            double totalComponentePorcAcumulado = 0;
+
+                            for (int j = 0; j < colDetalle.Cells.Count; j++)
+                            {
+
+                                DataCell celdaDetalle = colDetalle.Cells.Item(j);
+
+                                if (celdaDetalle.Value == "DIVISION INDUSTRIA")
+                                {
+                                    double valueDivIndustriaComision = colComision.Cells.Item(j).Value;
+                                    double valueDivIndustriaAcumulado = colAcumulado.Cells.Item(j).Value;
+                                    double valueDivIndustriaPorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                    totalComponenteComision += valueDivIndustriaComision;
+                                    totalComponenteAcumulado += valueDivIndustriaAcumulado;
+                                    totalComponentePorcAcumulado += valueDivIndustriaPorcAcumulado;
+
+                                }
+
+                                if (celdaDetalle.Value == "DIVISION AGRO")
+                                {
+                                    double valueDivAGROComision = colComision.Cells.Item(j).Value;
+                                    double valueDivAGROAcumulado = colAcumulado.Cells.Item(j).Value;
+                                    double valueDivAGROPorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                    totalComponenteComision += valueDivAGROComision;
+                                    totalComponenteAcumulado += valueDivAGROAcumulado;
+                                    totalComponentePorcAcumulado += valueDivAGROPorcAcumulado;
+
+                                }
+                            }
+
+                            GTotales.DataTable.SetValue(_colComision, i, totalComponenteComision);
+                            GTotales.DataTable.SetValue(_colAcumulado, i, totalComponenteAcumulado);
+                            GTotales.DataTable.SetValue(_colPorcAcum, i, totalComponentePorcAcumulado);
+
+                        }
+
+                        // TOTAL PROGLOBAL
+                        if (cellDetalle.Value == "TOTAL PROGLOBAL")
+                        {
+                            double totalProglobalComision = 0;
+                            double totalProglobalAcumulado = 0;
+                            double totalProglobalPorcAcumulado = 0;
+
+                            for (int j = 0; j < colDetalle.Cells.Count; j++)
+                            {
+
+                                DataCell celdaDetalle = colDetalle.Cells.Item(j);
+
+                                if (celdaDetalle.Value == "TOTAL COMPONENTES")
+                                {
+                                    double valueTotalCompComision = colComision.Cells.Item(j).Value;
+                                    double valueTotalCompAcumulado = colAcumulado.Cells.Item(j).Value;
+                                    double valueTotalCompPorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                    totalProglobalComision += valueTotalCompComision;
+                                    totalProglobalAcumulado += valueTotalCompAcumulado;
+                                    totalProglobalPorcAcumulado += valueTotalCompPorcAcumulado;
+
+                                }
+
+                                if (celdaDetalle.Value == "DIVISION EQUIPO TECNICO")
+                                {
+                                    double valueDivETComision = colComision.Cells.Item(j).Value;
+                                    double valueDivETAcumulado = colAcumulado.Cells.Item(j).Value;
+                                    double valueDivETPorcAcumulado = colPorcAcumulado.Cells.Item(j).Value;
+
+                                    totalProglobalComision += valueDivETComision;
+                                    totalProglobalAcumulado += valueDivETAcumulado;
+                                    totalProglobalPorcAcumulado += valueDivETPorcAcumulado;
+
+                                }
+                            }
+
+                            GTotales.DataTable.SetValue(_colComision, i, totalProglobalComision);
+                            GTotales.DataTable.SetValue(_colAcumulado, i, totalProglobalAcumulado);
+                            GTotales.DataTable.SetValue(_colPorcAcum, i, totalProglobalPorcAcumulado);
+
+                        }
+                    }
+
+                    _oForm.Freeze(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                if (_oForm != null)
+                {
+                    MarshalGC.ReleaseComObjects(_oForm);
+                    GC.Collect();
+                    GC.RefreshMemoryLimit();
+                    _oForm = null;
+                }
+            }
+        
+        }
+
     }
 
     public class VentasGastoTotales
@@ -983,25 +1464,24 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
     }
 
-
-   public class TotalsEntity
+    public class TotalsVentasEntity
     {
-        public double? totalVenta { get; set; }
-        public double? totalCosto{ get; set; }
-        public double? totalMargen { get; set; }
-        public double? totalPorcVenta { get; set; }
-        public double? totalDirecto { get; set; }
-        public double? totalPorcVtaDirect { get; set; }
-        public double? totalIndirecto { get; set; }
-        public double? totalPorcVtaIndirect { get; set; }
-        public double? totalTotalGastos { get; set; }
-        public double? totalMensual { get; set; }
-        public double? totalPorcVtaMensual { get; set; }
-        public double? totalComisiones { get; set; }
-        public double? totalAcumuladoMensualComision { get; set; }
-        public double? totalPorcVtaAcumuladoMensualComision { get; set; }
-        public double? totalIntereses { get; set; }
-        public double? totalAcumuladoIntereses { get; set; }
-        public double? totalPorcAcumuladoIntereses { get; set; }
+        public double totalVenta { get; set; }
+        public double totalCosto{ get; set; }
+        public double totalMargen { get; set; }
+        public double totalPorcVenta { get; set; }
+        public double totalDirecto { get; set; }
+        public double totalPorcVtaDirect { get; set; }
+        public double totalIndirecto { get; set; }
+        public double totalPorcVtaIndirect { get; set; }
+        public double totalTotalGastos { get; set; }
+        public double totalMensual { get; set; }
+        public double totalPorcVtaMensual { get; set; }
+        public double totalComisiones { get; set; }
+        public double totalAcumuladoMensualComision { get; set; }
+        public double totalPorcVtaAcumuladoMensualComision { get; set; }
+        public double totalIntereses { get; set; }
+        public double totalAcumuladoIntereses { get; set; }
+        public double totalPorcAcumuladoIntereses { get; set; }
 }
 }

@@ -45,14 +45,18 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Models
         public string? TitleSales { get; set; }
         public DataTable? DataTableSales { get; set; }
 
-        public string? TitleTotals { get; set; }
-        public DataTable? DataTableTotals { get; set; }
+        public string? TitleTotalsSales { get; set; }
+        public DataTable? DataTableTotalsSales { get; set; }
+
+        public string? TitleTotalsExpenses { get; set; }
+        public DataTable? DataTableTotalsExpenses { get; set; }
 
         public ReportExcelFormatSheet()
         {
             DataTableExpenses = new DataTable();
             DataTableSales = new DataTable();
-            DataTableTotals = new DataTable();
+            DataTableTotalsSales = new DataTable();
+            DataTableTotalsExpenses = new DataTable();
         }
 
     }

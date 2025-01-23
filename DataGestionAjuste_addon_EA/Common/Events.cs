@@ -158,6 +158,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Common
                 oFiltro = oFiltros.Add(SAPbouiCOM.BoEventTypes.et_KEY_DOWN);
                 oFiltro = oFiltros.Add(SAPbouiCOM.BoEventTypes.et_ITEM_PRESSED);
                 oFiltro = oFiltros.Add(SAPbouiCOM.BoEventTypes.et_MENU_CLICK);
+                oFiltro = oFiltros.Add(SAPbouiCOM.BoEventTypes.et_FORM_RESIZE);
 
                 //oFiltro.AddEx(frmEntrega.TipoFormulariostr);
                 //oFiltro.AddEx(frmAbono.strAbono);
