@@ -850,6 +850,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 var totalsSalesDIV_COMPONENTE = totals[3];
                 var totalsSalesDIV_PROGLOBAL = totals[4];
 
+                double totalImporteIND = 0.00;
+                double totalImporteAGRO = 0.00;
+                double totalImporteET = 0.00;
+
                 for (int r = 0; r < oDataTableTotalesGastos.Rows.Count; r++)
                 {
                     string codExternal = oDataTableTotalesGastos.GetValue("Cod. Ext", r);
@@ -870,8 +874,14 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
 
                         double importeIND = data.INDDirect + data.INDIndirect;
+                        totalImporteIND += importeIND;
+
                         double importeAGRO = data.AGRODirect + data.AGROIndirect;
+                        totalImporteAGRO += importeAGRO;
+
                         double importeET = data.ETDirect + data.ETIndirect;
+                        totalImporteET += importeET;
+
 
                         oDataTableTotalesGastos.SetValue("IND Importe", r, importeIND);
                         oDataTableTotalesGastos.SetValue("AGRO Importe", r, importeAGRO);
@@ -879,22 +889,41 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                         double porcIND = totalsSalesDIV_IND.totalVenta != 0.00 ? importeIND / totalsSalesDIV_IND.totalVenta * 100 : 0.00;
                         double porcAGRO = totalsSalesDIV_AGRO.totalVenta != 0.00 ? importeAGRO / totalsSalesDIV_AGRO.totalVenta * 100 : 0.00;
-                        //double porcET = totalsSalesDIV_ET.totalVenta != 0.00 ? importeET / totalsSalesDIV_ET.totalVenta * 100 : 0.00;
 
                         oDataTableTotalesGastos.SetValue("IND % s/ ventas", r, porcIND);
                         oDataTableTotalesGastos.SetValue("AGRO % s/ ventas", r, porcAGRO);
-                        //oDataTableTotalesGastos.SetValue("ET Importe", r, importeET);
 
-
+                        double distriLine = total - importeIND - importeAGRO - importeET;
+                        oDataTableTotalesGastos.SetValue("Distribuc. x linea", r, distriLine);
                     }
-
                 }
 
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+                for (int r = 0; r < oDataTableTotalesGastos.Rows.Count; r++)
+                {
+                    string codExternal = oDataTableTotalesGastos.GetValue("Cod. Ext", r);
+                    var data = dataTotalsExpensesGroup?.Find(d => d.CodExternal == codExternal) ?? null;
 
-                SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
+                    if (data != null)
+                    {
+                        double importeIND = oDataTableTotalesGastos.GetValue("IND Importe", r);
+                        double importeAGRO = oDataTableTotalesGastos.GetValue("AGRO Importe", r);
+                        double importeET = oDataTableTotalesGastos.GetValue("ET Importe", r);
+
+                        double verticalIND = totalImporteIND != 0.00 ? importeIND / totalImporteIND * 100 : 0.00;
+                        double verticalAGRO = totalImporteAGRO != 0.00 ? importeAGRO / totalImporteAGRO * 100 : 0.00;
+                        double porcTotalET = totalImporteET != 0.00 ? importeET / totalImporteET * 100 : 0.00;
+
+                        oDataTableTotalesGastos.SetValue("IND % Vertical", r, verticalIND);
+                        oDataTableTotalesGastos.SetValue("AGRO % Vertical", r, verticalAGRO);
+                        oDataTableTotalesGastos.SetValue("ET % s/ Total", r, porcTotalET);
+                    }
+                }
+
+                    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                    SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
                 GRIDTotalesGastos.DataTable = oDataTableTotalesGastos;
 
                 GRIDTotalesGastos.Item.Enabled = false;
