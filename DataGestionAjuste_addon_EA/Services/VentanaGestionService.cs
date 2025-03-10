@@ -42,22 +42,25 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         private static Recordset? _oRecordset;
         private static int _countForm = 0;
 
-        private static string _itemDateFrom = "Item_0";
-        private static string _itemDateTo = "Item_1";
-        private static string _itemBtnFilter = "Item_4";
-        private static string _itemBtnExport = "Item_5";
-        private static string _itemBtnApplyCommision = "Item_18";
-        private static string _itemBtnSave = "Item_14";
-        private static string _itemGridSavedAjustes = "Item_15";
-        private static string _itemLoading = "Item_19";
-        private static string _itemSolapaVentas = "Item_11";
-        private static string _itemSolapaGastos = "Item_7";
-        private static string _itemSolapaTotalVentas = "Item_9";
-        private static string _itemSolapaTotalGastos = "Item_17";
-        private static string _itemGridGastos = "Item_8";
-        private static string _itemGridTotalVentas = "Item_10";
-        private static string _itemGridVentas = "Item_12";
-        private static string _itemGridTotalGastos = "Item_20";
+
+        public static string _itemLblNumTrimestral = "Item_22";
+        public static string _itemDateFrom = "Item_0";
+        public static string _itemDateTo = "Item_1";
+        public static string _itemBtnFilter = "Item_4";
+        public static string _itemBtnExport = "Item_5";
+        public static string _itemBtnApplyCommision = "Item_18";
+        public static string _itemBtnSave = "Item_14";
+        public static string _itemGridSavedAjustes = "Item_15";
+        public static string _itemLoading = "Item_19";
+        public static string _itemInfoProgress = "Item_23";
+        public static string _itemSolapaVentas = "Item_11";
+        public static string _itemSolapaGastos = "Item_7";
+        public static string _itemSolapaTotalVentas = "Item_9";
+        public static string _itemSolapaTotalGastos = "Item_17";
+        public static string _itemGridGastos = "Item_8";
+        public static string _itemGridTotalVentas = "Item_10";
+        public static string _itemGridVentas = "Item_12";
+        public static string _itemGridTotalGastos = "Item_20";
 
 
         private static string _colAcumulado = "Acumulado (1)";
@@ -82,13 +85,13 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 MenuItem oMenu = Menus.Add("VentanaGestion", "Informe de Gestion", BoMenuType.mt_STRING, 0);
                 oMenu.Enabled = true;
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 NotificationService.Error($"CreateMenu Error -> {ex.Message}");
             }
 
         }
-
 
         public static void CreateWindow()
         {
@@ -117,13 +120,74 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
-                
+
+            }
+        }
+
+
+        public static SAPbouiCOM.DataTable CreateDataTable(string pDateFrom, string pDateTo, string pNameDataTable, int pCodeInforme = 0)
+        {
+            string formatDate = "yyyyMMdd";
+            string formatDateSP = "yyyy-MM-dd";
+            string DateFrom = DateTime.ParseExact(pDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
+            string DateTo = DateTime.ParseExact(pDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
+
+            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+
+            SAPbouiCOM.DataTable oDataTable;
+            try
+            {
+                oDataTable = _oForm.DataSources.DataTables.Item(pNameDataTable);
+            }
+            catch
+            {
+                oDataTable = _oForm.DataSources.DataTables.Add(pNameDataTable);
+            }
+            oDataTable.Clear();
+            oDataTable.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', {pCodeInforme})");
+
+            return oDataTable;
+        }
+
+        public static List<string> GetColumnsFromDataTables(System.Data.DataTable d1, System.Data.DataTable d2, System.Data.DataTable d3)
+        {
+            var arrColumns = new List<string>();
+            arrColumns.AddRange(d1!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName));
+            arrColumns.AddRange(d2!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName));
+            arrColumns.AddRange(d3!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName));
+            return arrColumns.Distinct().ToList();
+        }
+
+        public static System.Data.DataTable GetDataTableMaxRows(List<System.Data.DataTable> dts)
+        {
+            System.Data.DataTable? dataTableMax = new();
+            System.Data.DataTable? lastDataTable = new();
+
+            foreach (var dt in dts)
+            {
+                if (dt.Rows.Count >= lastDataTable.Rows.Count)
+                {
+                    dataTableMax = dt;
+                }
+                lastDataTable = dt;
+            }
+            return dataTableMax;
+        }
+
+        public static void LoadColumnsInDataTableTrimestral(System.Data.DataTable dt, IEnumerable<string> cols)
+        {
+            foreach (var colName in cols)
+            {
+                System.Data.DataColumn col = new();
+                col.ColumnName = colName;
+                dt!.Columns.Add(col);
             }
         }
 
         public static void RefreshDataGastosGrid()
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
                 string formatDate = "yyyyMMdd";
@@ -132,29 +196,15 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
                 EditText ETDateFrom = item.Specific;
                 string sDateFrom = ETDateFrom.Value;
-                string DateFrom = DateTime.ParseExact(sDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
                 item = _oForm.Items.Item(_itemDateTo);
                 EditText ETDateTo = item.Specific;
                 string sDateTo = ETDateTo.Value;
-                string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
                 item = _oForm.Items.Item(_itemGridGastos);
                 Grid GRIDGastos = item.Specific;
 
-                SAPbouiCOM.DataTable oDataTableGastos;
-
-
-                try
-                {
-                    oDataTableGastos = _oForm.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
-                }
-                catch
-                {
-                    oDataTableGastos = _oForm.DataSources.DataTables.Add(NameDataTables.tablaGastos.ToString());
-                }
-                oDataTableGastos.Clear();
-                oDataTableGastos.ExecuteQuery($"CALL INFORME_EA_GESTION('{DateFrom}','{DateTo}', 0)");
+                SAPbouiCOM.DataTable oDataTableGastos = CreateDataTable(sDateFrom, sDateTo, NameDataTables.tablaGastos.ToString(), 0);
 
                 GRIDGastos.DataTable = oDataTableGastos;
 
@@ -165,7 +215,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                     col.Editable = col.UniqueID switch
                     {
-                        "U_Ajuste" => true,
+                        "Ajuste" => true,
                         _ => false,
                     };
                 }
@@ -174,11 +224,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
-        
+
             }
 
         }
-
 
         public static void RefreshDataVentasGrid()
         {
@@ -225,7 +274,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                     col.Editable = col.UniqueID switch
                     {
-                        "U_Ajuste" => true,
+                        "Ajuste" => true,
                         _ => false,
                     };
                 }
@@ -237,10 +286,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
         }
 
-       
         public static void TruncateUDOGestionAjuste()
         {
-            try { 
+            try
+            {
                 _oRecordset = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
                 _oRecordset!.DoQuery(@"SELECT ""Code"" FROM ""@GESTIONAJUSTE""");
 
@@ -265,14 +314,15 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oRecordset);
-      
+
             }
 
-}
+        }
 
         public static void InsertRecordsUDOGestionAjuste()
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
                 SAPbouiCOM.Item item = _oForm!.Items.Item(_itemGridGastos);
@@ -310,11 +360,12 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                             generalData.SetProperty("U_Ajuste", ajuste);
                             generalService.Update(generalData);
-                        } else
+                        }
+                        else
                         {
 
                             generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
-                        
+
                             _oRecordset.DoQuery(@"SELECT MAX(""Code"") FROM ""@GESTIONAJUSTE""");
                             code = string.IsNullOrEmpty(_oRecordset.Fields.Item(0).Value) ? "1" : ((int)int.Parse(_oRecordset.Fields.Item(0).Value) + 1).ToString();
 
@@ -333,20 +384,21 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
-   
+
             }
         }
 
         public static void ResetGestionAjuste()
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
                 EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
@@ -366,113 +418,82 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
         }
 
-
-        public static void CreateColumnsInDataTableExpenses(System.Data.DataTable? table)
-        {
-
-            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
-
-
-            DataColumnCollection cols = table!.Columns;
-            for (int col = 0; col < dtGastos.Columns.Count; col++)
-            {
-                string colName = dtGastos.Columns.Item(col).Name;
-                var colType = (dtGastos.Columns.Item(col).Cells.Item(1).Value)!.GetType();
-
-                cols.Add(colName, colType);
-            }
-        }
-
-        public static void CreateColumnsInDataTableSales(System.Data.DataTable? table)
+        public static void CreateColumnsInDataTableSystem(string tableName, System.Data.DataTable? table)
         {
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
+            SAPbouiCOM.DataTable dt = _oForm!.DataSources.DataTables.Item(tableName);
 
             DataColumnCollection cols = table!.Columns;
-            for (int col = 0; col < dtVentas.Columns.Count; col++)
+            if (dt.Columns.Count > 0)
             {
-                string colName = dtVentas.Columns.Item(col).Name;
-                var colType = (dtVentas.Columns.Item(col).Cells.Item(1).Value)!.GetType();
-
-                cols.Add(colName, colType);
-            }
-        }
-
-        public static void CreateColumnsInDataTableTotales(System.Data.DataTable? table)
-        {
-            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString());
-
-            DataColumnCollection cols = table!.Columns;
-            for (int col = 0; col < dtTotales.Columns.Count; col++)
-            {
-                string colName = dtTotales.Columns.Item(col).Name;
-                var colType = (dtTotales.Columns.Item(col).Cells.Item(1).Value)!.GetType();
-
-                cols.Add(colName, colType);
-            }
-        }
-
-
-        public static void LoadDataInDataTableExpenses(ReportExcelFormatSheet sheet)
-        {
-            try { 
-                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtGastos = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
-                for (int r = 0; r < dtGastos.Rows.Count; r++)
+                for (int col = 0; col < dt.Columns.Count; col++)
                 {
-                    DataRow rowSys = sheet.DataTableExpenses!.NewRow();
+                    string colName = dt.Columns.Item(col).Name;
+                    var colType = (dt.Columns.Item(col).Cells.Item(0).Value)!.GetType();
 
-                    for (int c = 0; c < dtGastos.Columns.Count; c++)
-                    {
-                        rowSys[c] = dtGastos.GetValue(c, r)?.ToString();
-                    }
-                    sheet.DataTableExpenses.Rows.Add(rowSys);
+                    cols.Add(colName, colType);
                 }
             }
-            finally
-            {
-                MarshalGC.ReleaseComObject(_oForm);
-            }
-        } 
-        
-        public static void LoadDataInDataTableSales(ReportExcelFormatSheet sheet)
-        {
-            try { 
-                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtVentas = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
-                for (int r = 0; r < dtVentas.Rows.Count; r++)
-                {
-                    DataRow rowSys = sheet.DataTableSales!.NewRow();
-
-                    for (int c = 0; c < dtVentas.Columns.Count; c++)
-                    {
-                        rowSys[c] = dtVentas.GetValue(c, r)?.ToString();
-                    }
-                    sheet.DataTableSales.Rows.Add(rowSys);
-                }
-            }
-            finally
-            {
-                MarshalGC.ReleaseComObject(_oForm);
-            }
         }
-        
-        public static void LoadDataInDataTableTotals(ReportExcelFormatSheet sheet)
-        {
-            try {
-                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                SAPbouiCOM.DataTable dtTotales = _oForm!.DataSources.DataTables.Item(NameDataTables.tablaTotalVentas.ToString());
-                for (int r = 0; r < dtTotales.Rows.Count; r++)
-                {
-                    DataRow rowSys = sheet.DataTableTotalsSales!.NewRow();
 
-                    for (int c = 0; c < dtTotales.Columns.Count; c++)
+
+        public static List<TotalsVentasEntity> CreateDataTableSystem_TotalsSales_Annual(SAPbouiCOM.DataTable dtTotalsSal, ReportExcelFormatSheet sheet)
+        {
+            List<string> columns = ["Ventas", "Costos", "Margen", "% s. ventas (1)", "Directos", "% s. ventas (2)", "Indirectos", "% s. ventas (3)", "T. Gastos","Mensual", "% s. ventas (4)",
+                    "Comisiones", "Acumulado (1)", "% s. ventas (5)", "Intereses", "Acumulado (2)", "% s. ventas (6)"];
+
+            dtTotalsSal.Columns.Add("Detalle", BoFieldsType.ft_AlphaNumeric);
+            columns.ForEach(colName => dtTotalsSal.Columns.Add(colName, BoFieldsType.ft_Float));
+
+            var dataTotals = GetDataTotalsVentas(sheet);
+            int countIndex = 0;
+
+            var totals_IND = LoadDataInDataTable(dataTotals, "^IND", dtTotalsSal, countIndex);
+            countIndex = dtTotalsSal.Rows.Count;
+
+            var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", dtTotalsSal, countIndex);
+            countIndex = dtTotalsSal.Rows.Count;
+
+            var totalComponente = LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, dtTotalsSal, countIndex);
+            countIndex++;
+
+            LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(totalComponente);
+
+            var totals_ET = LoadDataInDataTable(dataTotals, "^ET", dtTotalsSal, countIndex);
+            countIndex = dtTotalsSal.Rows.Count;
+
+            var totalProglobal = LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, dtTotalsSal, countIndex);
+
+            return [totals_IND, totals_AGRO, totals_ET, totalComponente, totalProglobal];
+        }
+
+        public static void LoadDataInDataTableSystem(string tableName, System.Data.DataTable? table)
+        {
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+                SAPbouiCOM.DataTable dt = _oForm!.DataSources.DataTables.Item(tableName);
+                for (int r = 0; r < dt.Rows.Count; r++)
+                {
+                    DataRow rowSys = table!.NewRow();
+
+                    for (int c = 0; c < dt.Columns.Count; c++)
                     {
-                        rowSys[c] = dtTotales.GetValue(c, r)?.ToString();
+                        double dataParse;
+                        var data = dt.GetValue(c, r)?.ToString();
+                        bool isParser = double.TryParse(data, out dataParse);
+                        bool existsVariousPoints = Regex.Matches(data, @"\.").Count > 1;
+
+                        if (isParser && !existsVariousPoints)
+                        {
+                            rowSys[c] = Math.Round(dataParse, 2).ToString();
+                        } else
+                        {
+                            rowSys[c] = data;
+                        }
+
                     }
-                    sheet.DataTableTotalsSales.Rows.Add(rowSys);
+                    table.Rows.Add(rowSys);
                 }
             }
             finally
@@ -481,11 +502,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
         }
 
-     
-        
         public static string GetSheetName()
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
                 EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
                 EditText ETDateTo = _oForm!.Items.Item(_itemDateTo).Specific;
@@ -523,7 +543,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         public static void LoadSheetNameInGrid(ReportExcelFormatSheet sheet)
         {
-            try { 
+            try
+            {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
                 Grid GSavedAjuste = _oForm!.Items.Item(_itemGridSavedAjustes).Specific;
                 GSavedAjuste.DataTable.Rows.Add();
@@ -532,7 +553,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
-            } 
+            }
         }
 
         public static string GetPathToSaveFile(string? filename)
@@ -672,6 +693,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     };
                 }).ToList();
 
+
             // TOTALES
             var totals = from ventas in dataVentasAgrupado
                          join gastos in dataGastos
@@ -689,13 +711,148 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             return totals.ToList();
         }
 
+        public static List<VentasGastoTotales> GetDataTotalsVentas2(ReportExcelFormatSheet sheet)
+        {
+            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+            SAPbouiCOM.DataTable dtExpenses = _oForm.DataSources.DataTables.Item(NameDataTables.tablaGastos.ToString());
+            SAPbouiCOM.DataTable dtSales = _oForm.DataSources.DataTables.Item(NameDataTables.tablaVentas.ToString());
+
+            List<string> colsGastos = new();
+            for (int col = 0; col < dtExpenses.Columns.Count; col++)
+            {
+                string colName = dtExpenses.Columns.Item(col).Name;
+                if (Regex.IsMatch(colName, @"Di$|In$"))
+                {
+                    colsGastos.Add(colName);
+                }
+            }
+
+
+            Dictionary<string, double> expensesData = new();
+
+            for (int col = 0; col < dtExpenses.Columns.Count; col++)
+            {
+                string colName = dtExpenses.Columns.Item(col).Name;
+                double totalCol = 0;
+                for (int row = 0; row < dtExpenses.Rows.Count; row++)
+                {
+                    if (Regex.IsMatch(colName, @"Di$|In$"))
+                    {
+                        double value = dtExpenses.GetValue(col, row);
+                        totalCol += value;
+
+                    }
+                }
+                expensesData.Add(colName, totalCol);
+            }
+
+                var dataGastos = colsGastos
+                    .Select(col =>
+                    {
+                        string uniqueCC = Regex.Replace(col, @"Di$|In$", "").Trim();
+
+                        double totalDirecto = expensesData
+                                                .Where(data => data.Key == uniqueCC + " Di")
+                                                .Select(data => data.Value).Sum();
+
+                        double totalIndirecto = expensesData
+                                                .Where(data => data.Key == uniqueCC + " In")
+                                                .Select(data => data.Value).Sum();
+
+                        return new
+                        {
+                            Code = uniqueCC,
+                            TotalDirecto = totalDirecto,
+                            TotalIndirecto = totalIndirecto
+                        };
+                    });//.Distinct();
+
+
+                var expensesData_ = sheet.DataTableExpenses!.AsEnumerable();
+                var colsGastos_ = sheet.DataTableExpenses!.Columns.Cast<System.Data.DataColumn>().Where(col => Regex.IsMatch(col.ColumnName, @"Di$|In$")).ToList();
+
+            var dataGastos_ = colsGastos_
+                .Select(col =>
+                {
+                    string uniqueCC = Regex.Replace(col.ColumnName, @"Di$|In$", "").Trim();
+
+                    double totalDirecto = expensesData_
+                                            .Where(data => !data.IsNull(uniqueCC + " Di"))
+                                            .Select(data => data.Field<double>(uniqueCC + " Di")).Sum();
+
+                    double totalIndirecto = expensesData_
+                                            .Where(data => !data.IsNull(uniqueCC + " In"))
+                                            .Select(data => data.Field<double>(uniqueCC + " In")).Sum();
+
+                    return new
+                    {
+                        Code = uniqueCC,
+                        TotalDirecto = totalDirecto,
+                        TotalIndirecto = totalIndirecto
+                    };
+                });//.Distinct();
+
+                //////////////////////////////////////////////////////
+                // TODO VENTAS
+                var SalesData = sheet.DataTableSales!.AsEnumerable();
+                var colsVentas = sheet.DataTableSales!.Columns.Cast<System.Data.DataColumn>().Where(col => Regex.IsMatch(col.ColumnName, @"^Costo\s+(IND|AGRO|ET)|^Venta\s+(IND|AGRO|ET)")).ToList();
+                var dataVentasSinAgrupar = colsVentas
+                    .Select(col =>
+                    {
+                        string uniqueCC = Regex.Replace(col.ColumnName, @"^Costo|^Venta", "").Trim();
+
+                        double totalVentas = SalesData
+                                                .Where(data => !data.IsNull(col.ColumnName))
+                                                .Select(data => Regex.IsMatch(col.ColumnName, @"^Venta\s+(IND|AGRO|ET)") ? data.Field<double>(col.ColumnName) : 0).Sum();
+                        double totalCosto = SalesData
+                                                .Where(data => !data.IsNull(col.ColumnName))
+                                                .Select(data => Regex.IsMatch(col.ColumnName, @"^Costo\s+(IND|AGRO|ET)") ? data.Field<double>(col.ColumnName) : 0).Sum();
+
+                        return new
+                        {
+                            Code = uniqueCC,
+                            Ventas = totalVentas,
+                            Costos = totalCosto,
+                        };
+
+                    }).Distinct();
+
+                var dataVentasAgrupado = dataVentasSinAgrupar
+                    .GroupBy(d => d.Code)
+                    .Select(d =>
+                    {
+                        return new
+                        {
+                            Code = d.Key,
+                            Ventas = d.Sum(data => data.Ventas),
+                            Costos = d.Sum(data => data.Costos)
+                        };
+                    }).ToList();
+
+                // TOTALES
+                var totals = from ventas in dataVentasAgrupado
+                             join gastos in dataGastos
+                             on ventas.Code equals gastos.Code
+                             select new VentasGastoTotales()
+                             {
+                                 CC = ventas.Code,
+                                 Ventas = ventas.Ventas,
+                                 Costos = ventas.Costos,
+                                 Directo = gastos.TotalDirecto,
+                                 Indirecto = gastos.TotalIndirecto
+                             };
+
+
+                return totals.ToList();
+            }
+
         public static List<TotalsVentasEntity>? RefreshDataTotalesVentasGrid(ReportExcelFormatSheet sheet)
         {
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
-                string formatDate = "yyyyMMdd"; 
+                string formatDate = "yyyyMMdd";
                 string formatDateSP = "yyyy-MM-dd";
 
                 SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
@@ -720,7 +877,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 catch
                 {
                     oDataTableTotalesVentas = _oForm.DataSources.DataTables.Add(NameDataTables.tablaTotalVentas.ToString());
-                } 
+                }
 
                 oDataTableTotalesVentas.Clear();
 
@@ -733,34 +890,34 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 var dataTotals = GetDataTotalsVentas(sheet);
                 int countIndex = 0;
 
-                // INDUSTRIA
-                var totals_IND = LoadDataInDataTable(dataTotals, "^IND", oDataTableTotalesVentas, countIndex);
-                countIndex = oDataTableTotalesVentas.Rows.Count;
+                 // INDUSTRIA
+                 var totals_IND = LoadDataInDataTable(dataTotals, "^IND", oDataTableTotalesVentas,countIndex);
+                 countIndex = oDataTableTotalesVentas.Rows.Count;
 
-                // AGRO
-                var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", oDataTableTotalesVentas, countIndex);
-                countIndex = oDataTableTotalesVentas.Rows.Count;
+                 // AGRO
+                 var totals_AGRO = LoadDataInDataTable(dataTotals, "^AGRO", oDataTableTotalesVentas,countIndex);
+                 countIndex = oDataTableTotalesVentas.Rows.Count;
 
-                // TOTAL COMPONENTES
-                var totalComponente = LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, oDataTableTotalesVentas, countIndex);
-                countIndex++;
+                 // TOTAL COMPONENTES
+                 var totalComponente = LoadInTable_TOTALCOMPONENTES(totals_IND, totals_AGRO, oDataTableTotalesVentas, countIndex);
+                 countIndex++;
 
-                LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(totalComponente);
+                 LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(totalComponente);
 
-                // EQUIPO TECNICO
-                var totals_ET = LoadDataInDataTable(dataTotals, "^ET", oDataTableTotalesVentas, countIndex);
-                countIndex = oDataTableTotalesVentas.Rows.Count;
+                 // EQUIPO TECNICO
+                 var totals_ET = LoadDataInDataTable(dataTotals, "^ET", oDataTableTotalesVentas, countIndex);
+                 countIndex = oDataTableTotalesVentas.Rows.Count;
 
-                // TOTAL PROGLOBAL
-                var totalProglobal = LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, oDataTableTotalesVentas, countIndex);
+                 // TOTAL PROGLOBAL
+                 var totalProglobal = LoadInTable_TOTALPROGLOBAL(totals_IND, totals_AGRO, totals_ET, oDataTableTotalesVentas, countIndex);
 
-                GRIDTotalesVentas.DataTable = oDataTableTotalesVentas;
+                 GRIDTotalesVentas.DataTable = oDataTableTotalesVentas;
 
-                SetterColorInRows_InSolapaTotalsSales(GRIDTotalesVentas);
+                 SetterColorInRows_InSolapaTotalsSales(GRIDTotalesVentas);
 
-                SetterColumnCommissionEditable_InSolapaTotalsSales(GRIDTotalesVentas);
+                 SetterColumnCommissionEditable_InSolapaTotalsSales(GRIDTotalesVentas);
 
-                return [totals_IND, totals_AGRO, totals_ET, totalComponente, totalProglobal];
+                 return [totals_IND, totals_AGRO, totals_ET, totalComponente, totalProglobal];
             }
             catch (Exception ex)
             {
@@ -772,15 +929,16 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
             return null;
         }
+
         public static void RefreshDataTotalesGastosGrid(List<TotalsVentasEntity> totals)
         {
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                
+
                 SAPbouiCOM.DataTable oDataTableTotalesGastos;
 
-                
+
 
                 try
                 {
@@ -800,7 +958,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 SAPbouiCOM.Grid GRIDGastos = _oForm.Items.Item(_itemGridGastos).Specific;
 
                 List<DataTotalsExpenses> LinQTableGastos = new();
-                for(int r = 0; r < GRIDGastos.Rows.Count; r++)
+                for (int r = 0; r < GRIDGastos.Rows.Count; r++)
                 {
                     string codExternal = GRIDGastos.DataTable.GetValue("Cod. Ext", r);
 
@@ -919,11 +1077,11 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     }
                 }
 
-                    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                    SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
+                SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
                 GRIDTotalesGastos.DataTable = oDataTableTotalesGastos;
 
                 GRIDTotalesGastos.Item.Enabled = false;
@@ -936,6 +1094,129 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             finally
             {
                 MarshalGC.ReleaseComObject(_oForm);
+            }
+        }
+
+        public static void RefreshDataTotalesGastos_Annual(SAPbouiCOM.DataTable dtExp, SAPbouiCOM.DataTable dtTotalsExp, List<TotalsVentasEntity> totalsSales)
+        {
+            List<DataTotalsExpenses> LinQTableGastos = new();
+            for (int r = 0; r < dtExp.Rows.Count; r++)
+            {
+                string codExternal = dtExp.GetValue("Cod. Ext", r);
+
+                double INDDirect = dtExp.GetValue("Industria Directo", r);
+                double AGRODirect = dtExp.GetValue("Agro Directo", r);
+                double ETDirect = dtExp.GetValue("Et (Equipo tecnico) Directo", r);
+
+                double INDIndirect = dtExp.GetValue("Industria Indirecto", r);
+                double AGROIndirect = dtExp.GetValue("Agro Indirecto", r);
+                double ETIndirect = dtExp.GetValue("Et (Equipo tecnico) Indirecto", r);
+
+                var data = new DataTotalsExpenses()
+                {
+                    CodExternal = codExternal,
+                    INDDirect = INDDirect,
+                    AGRODirect = AGRODirect,
+                    ETDirect = ETDirect,
+                    INDIndirect = INDIndirect,
+                    AGROIndirect = AGROIndirect,
+                    ETIndirect = ETIndirect
+                };
+
+                LinQTableGastos.Add(data);
+            }
+
+            var dataTotalsExpensesGroup = LinQTableGastos
+            .Where(d => !string.IsNullOrEmpty(d.CodExternal))
+            .GroupBy(d => d.CodExternal)
+            .Select(d =>
+            {
+                return new DataTotalsExpenses()
+                {
+                    CodExternal = d.Max(data => data.CodExternal),
+                    INDDirect = d.Sum(data => data.INDDirect),
+                    AGRODirect = d.Sum(data => data.AGRODirect),
+                    ETDirect = d.Sum(data => data.ETDirect),
+                    INDIndirect = d.Sum(data => data.INDIndirect),
+                    AGROIndirect = d.Sum(data => data.AGROIndirect),
+                    ETIndirect = d.Sum(data => data.ETIndirect),
+                };
+            }).ToList();
+
+
+            var totalsSalesDIV_IND = totalsSales[0];
+            var totalsSalesDIV_AGRO = totalsSales[1];
+            var totalsSalesDIV_ET = totalsSales[2];
+            var totalsSalesDIV_COMPONENTE = totalsSales[3];
+            var totalsSalesDIV_PROGLOBAL = totalsSales[4];
+
+            double totalImporteIND = 0.00;
+            double totalImporteAGRO = 0.00;
+            double totalImporteET = 0.00;
+
+            for (int r = 0; r < dtTotalsExp.Rows.Count; r++)
+            {
+                string codExternal = dtTotalsExp.GetValue("Cod. Ext", r);
+                var data = dataTotalsExpensesGroup?.Find(d => d.CodExternal == codExternal) ?? null;
+
+                if (data != null)
+                {
+                    double directo = data.INDDirect + data.AGRODirect + data.ETDirect;
+                    double indirecto = data.INDIndirect + data.AGROIndirect + data.ETIndirect;
+                    double total = directo + indirecto;
+
+                    double porcVenta = totalsSalesDIV_PROGLOBAL.totalVenta != 0.00 ? total / totalsSalesDIV_PROGLOBAL.totalVenta * 100 : 0.00;
+
+                    dtTotalsExp.SetValue("Directo", r, directo);
+                    dtTotalsExp.SetValue("Indirecto", r, indirecto);
+                    dtTotalsExp.SetValue("Total", r, total);
+                    dtTotalsExp.SetValue("% s/ ventas", r, porcVenta);
+
+
+                    double importeIND = data.INDDirect + data.INDIndirect;
+                    totalImporteIND += importeIND;
+
+                    double importeAGRO = data.AGRODirect + data.AGROIndirect;
+                    totalImporteAGRO += importeAGRO;
+
+                    double importeET = data.ETDirect + data.ETIndirect;
+                    totalImporteET += importeET;
+
+
+                    dtTotalsExp.SetValue("IND Importe", r, importeIND);
+                    dtTotalsExp.SetValue("AGRO Importe", r, importeAGRO);
+                    dtTotalsExp.SetValue("ET Importe", r, importeET);
+
+                    double porcIND = totalsSalesDIV_IND.totalVenta != 0.00 ? importeIND / totalsSalesDIV_IND.totalVenta * 100 : 0.00;
+                    double porcAGRO = totalsSalesDIV_AGRO.totalVenta != 0.00 ? importeAGRO / totalsSalesDIV_AGRO.totalVenta * 100 : 0.00;
+
+                    dtTotalsExp.SetValue("IND % s/ ventas", r, porcIND);
+                    dtTotalsExp.SetValue("AGRO % s/ ventas", r, porcAGRO);
+
+                    double distriLine = total - importeIND - importeAGRO - importeET;
+                    dtTotalsExp.SetValue("Distribuc. x linea", r, distriLine);
+                }
+            }
+
+            for (int r = 0; r < dtTotalsExp.Rows.Count; r++)
+            {
+                string codExternal = dtTotalsExp.GetValue("Cod. Ext", r);
+                var data = dataTotalsExpensesGroup?.Find(d => d.CodExternal == codExternal) ?? null;
+
+                if (data != null)
+                {
+                    double importeIND = dtTotalsExp.GetValue("IND Importe", r);
+                    double importeAGRO = dtTotalsExp.GetValue("AGRO Importe", r);
+                    double importeET = dtTotalsExp.GetValue("ET Importe", r);
+
+                    double verticalIND = totalImporteIND != 0.00 ? importeIND / totalImporteIND * 100 : 0.00;
+                    double verticalAGRO = totalImporteAGRO != 0.00 ? importeAGRO / totalImporteAGRO * 100 : 0.00;
+                    double porcTotalET = totalImporteET != 0.00 ? importeET / totalImporteET * 100 : 0.00;
+
+                    dtTotalsExp.SetValue("IND % Vertical", r, verticalIND);
+                    dtTotalsExp.SetValue("AGRO % Vertical", r, verticalAGRO);
+                    dtTotalsExp.SetValue("ET % s/ Total", r, porcTotalET);
+                }
             }
         }
 
@@ -1012,7 +1293,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             }
         }
 
-        public static TotalsVentasEntity LoadDataInDataTable(List<VentasGastoTotales> dataTotals, string regexEntity, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
+        public static TotalsVentasEntity LoadDataInDataTable(List<VentasGastoTotales> dataTotals, string regexEntity, SAPbouiCOM.DataTable oDataTableTotales,int countIndex)
         {
             string Detalle = regexEntity switch
             {
@@ -1125,51 +1406,51 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         public static TotalsVentasEntity LoadInTable_TOTALCOMPONENTES(TotalsVentasEntity totals_IND, TotalsVentasEntity totals_AGRO, SAPbouiCOM.DataTable oDataTableTotales, int countIndex)
         {
-                // TOTAL COMPONENTES
-                var totalComponentes = new
-                {
-                    Detalle = "TOTAL COMPONENTES",
-                    Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta,
-                    Costos = totals_IND.totalCosto + totals_AGRO.totalCosto,
-                    Margen = totals_IND.totalMargen + totals_AGRO.totalMargen,
-                    PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta,
-                    Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto,
-                    PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect,
-                    Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto,
-                    PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect,
-                    TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos,
-                    Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual,
-                    PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual,
-                    Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones,
-                    AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision,
-                    PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision,
-                    Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses,
-                    AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses,
-                    PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses
-                };
+            // TOTAL COMPONENTES
+            var totalComponentes = new
+            {
+                Detalle = "TOTAL COMPONENTES",
+                Ventas = totals_IND.totalVenta + totals_AGRO.totalVenta,
+                Costos = totals_IND.totalCosto + totals_AGRO.totalCosto,
+                Margen = totals_IND.totalMargen + totals_AGRO.totalMargen,
+                PorcVenta_1 = totals_IND.totalPorcVenta + totals_AGRO.totalPorcVenta,
+                Directo = totals_IND.totalDirecto + totals_AGRO.totalDirecto,
+                PorcVenta_2 = totals_IND.totalPorcVtaDirect + totals_AGRO.totalPorcVtaDirect,
+                Indirecto = totals_IND.totalIndirecto + totals_AGRO.totalIndirecto,
+                PorcVenta_3 = totals_IND.totalPorcVtaIndirect + totals_AGRO.totalPorcVtaIndirect,
+                TotalGastos = totals_IND.totalTotalGastos + totals_AGRO.totalTotalGastos,
+                Mensual = totals_IND.totalMensual + totals_AGRO.totalMensual,
+                PorcentajeVentaMensual = totals_IND.totalPorcVtaMensual + totals_AGRO.totalPorcVtaMensual,
+                Comisiones = totals_IND.totalComisiones + totals_AGRO.totalComisiones,
+                AcumuladoMensualComisiones = totals_IND.totalAcumuladoMensualComision + totals_AGRO.totalAcumuladoMensualComision,
+                PorcentajeVentaAcumuladoMensualComisiones = totals_IND.totalPorcVtaAcumuladoMensualComision + totals_AGRO.totalPorcVtaAcumuladoMensualComision,
+                Intereses = totals_IND.totalIntereses + totals_AGRO.totalIntereses,
+                AcumuladoIntereses = totals_IND.totalAcumuladoIntereses + totals_AGRO.totalAcumuladoIntereses,
+                PorcentageAcumuladoIntereses = totals_IND.totalPorcAcumuladoIntereses + totals_AGRO.totalPorcAcumuladoIntereses
+            };
 
-                oDataTableTotales.Rows.Add();
-                oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
-                oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
-                oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
-                oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
-                oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
+            oDataTableTotales.Rows.Add();
+            oDataTableTotales.SetValue("Detalle", countIndex, totalComponentes.Detalle);
+            oDataTableTotales.SetValue("Ventas", countIndex, totalComponentes.Ventas);
+            oDataTableTotales.SetValue("Costos", countIndex, totalComponentes.Costos);
+            oDataTableTotales.SetValue("Margen", countIndex, totalComponentes.Margen);
+            oDataTableTotales.SetValue("% s. ventas (1)", countIndex, totalComponentes.PorcVenta_1);
 
-                oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
-                oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
-                oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
-                oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
-                oDataTableTotales.SetValue("T. Gastos", countIndex, totalComponentes.TotalGastos);
+            oDataTableTotales.SetValue("Directos", countIndex, totalComponentes.Directo);
+            oDataTableTotales.SetValue("% s. ventas (2)", countIndex, totalComponentes.PorcVenta_2);
+            oDataTableTotales.SetValue("Indirectos", countIndex, totalComponentes.Indirecto);
+            oDataTableTotales.SetValue("% s. ventas (3)", countIndex, totalComponentes.PorcVenta_3);
+            oDataTableTotales.SetValue("T. Gastos", countIndex, totalComponentes.TotalGastos);
 
-                oDataTableTotales.SetValue("Mensual", countIndex, totalComponentes.Mensual);
-                oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalComponentes.PorcentajeVentaMensual);
-                oDataTableTotales.SetValue("Comisiones", countIndex, totalComponentes.Comisiones);
-                oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalComponentes.AcumuladoMensualComisiones);
-                oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalComponentes.PorcentajeVentaAcumuladoMensualComisiones);
+            oDataTableTotales.SetValue("Mensual", countIndex, totalComponentes.Mensual);
+            oDataTableTotales.SetValue("% s. ventas (4)", countIndex, totalComponentes.PorcentajeVentaMensual);
+            oDataTableTotales.SetValue("Comisiones", countIndex, totalComponentes.Comisiones);
+            oDataTableTotales.SetValue("Acumulado (1)", countIndex, totalComponentes.AcumuladoMensualComisiones);
+            oDataTableTotales.SetValue("% s. ventas (5)", countIndex, totalComponentes.PorcentajeVentaAcumuladoMensualComisiones);
 
-                oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
-                oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
-                oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
+            oDataTableTotales.SetValue("Intereses", countIndex, totalComponentes.Intereses);
+            oDataTableTotales.SetValue("Acumulado (2)", countIndex, totalComponentes.AcumuladoIntereses);
+            oDataTableTotales.SetValue("% s. ventas (6)", countIndex, totalComponentes.PorcentageAcumuladoIntereses);
 
             return new TotalsVentasEntity()
             {
@@ -1265,7 +1546,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         public static void CalculateTotals_Comisiones_Acumulado_PorcAcumulado()
         {
-           
+
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
@@ -1465,9 +1746,498 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     _oForm = null;
                 }
             }
-        
+
         }
 
+
+        public static ReportExcelFormatSheet? CalcCurrentTrimestral(ReportExcelFormat reportExcelFormat)
+        {
+            if (reportExcelFormat!.Sheets.Count != 3)
+            {
+                return null;
+            }
+            
+            ReportExcelFormatSheet sTrimestral = new();
+            ReportExcelFormatSheet s1 = reportExcelFormat!.Sheets[0];
+            ReportExcelFormatSheet s2 = reportExcelFormat!.Sheets[1];
+            ReportExcelFormatSheet s3 = reportExcelFormat!.Sheets[2];
+
+            sTrimestral.DataTableExpenses = s1.DataTableExpenses!.Clone();
+            sTrimestral.DataTableSales = s1.DataTableSales!.Clone();
+            sTrimestral.DataTableTotalsSales = s1.DataTableTotalsSales!.Clone();
+            sTrimestral.DataTableTotalsExpenses = s1.DataTableTotalsExpenses!.Clone();
+
+            // GASTOS
+            var dt1Expenses = s1.DataTableExpenses;
+            var dt2Expenses = s2.DataTableExpenses;
+            var dt3Expenses = s3.DataTableExpenses;
+
+            var combinedDataExpenses = dt1Expenses.AsEnumerable().Concat(dt2Expenses!.AsEnumerable()).Concat(dt3Expenses!.AsEnumerable());
+            var columnsToSumExpenses = VentanaGestionService.GetColumnsFromDataTables(dt1Expenses, dt2Expenses!, dt3Expenses!);
+
+            int count = 0;
+            var groupedDataExpenses = combinedDataExpenses
+                                .GroupBy(r => r.Field<string>("Cuenta"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sTrimestral.DataTableExpenses.NewRow();
+
+                                    for (int col = 0; col < columnsToSumExpenses.Count; col++)
+                                    {
+                                        string colName = columnsToSumExpenses[col];
+
+                                        if (col > 7) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "LineID":
+                                                    string lineID = (++count).ToString();
+                                                    newRow[colName] = lineID;
+                                                    break;
+                                                case "Cuenta":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                                default:
+                                                    newRow[colName] = g.Max(row => row.Field<object>(colName));
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataExpenses)
+            {
+                sTrimestral.DataTableExpenses.Rows.Add(row);
+            }
+
+            // VENTAS
+            var dt1Sales = s1.DataTableSales;
+            var dt2Sales = s2.DataTableSales;
+            var dt3Sales = s3.DataTableSales;
+
+            var combinedDataSales = dt1Sales.AsEnumerable().Concat(dt2Sales!.AsEnumerable()).Concat(dt3Sales!.AsEnumerable());
+            var columnsToSumSales = VentanaGestionService.GetColumnsFromDataTables(dt1Sales, dt2Sales!, dt3Sales!);
+
+
+            var groupedDataSales = combinedDataSales
+                                .GroupBy(r => r.Field<string>("Linea"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sTrimestral.DataTableSales.NewRow();
+
+                                    for (int col = 0; col < columnsToSumSales.Count; col++)
+                                    {
+                                        string colName = columnsToSumSales[col];
+
+                                        if (col > 0) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Linea":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataSales)
+            {
+                sTrimestral.DataTableSales.Rows.Add(row);
+            }
+
+
+            // TOTALES DE VENTAS
+            var dt1TSales = s1.DataTableTotalsSales;
+            var dt2TSales = s2.DataTableTotalsSales;
+            var dt3TSales = s3.DataTableTotalsSales;
+
+            var combinedDataTSales = dt1TSales.AsEnumerable().Concat(dt2TSales!.AsEnumerable()).Concat(dt3TSales!.AsEnumerable());
+            var columnsToSumTSales = VentanaGestionService.GetColumnsFromDataTables(dt1TSales, dt2TSales!, dt3TSales!);
+
+
+            var groupedDataTSales = combinedDataTSales
+                                .GroupBy(r => r.Field<string>("Detalle"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sTrimestral.DataTableTotalsSales.NewRow();
+
+                                    for (int col = 0; col < columnsToSumTSales.Count; col++)
+                                    {
+                                        string colName = columnsToSumTSales[col];
+
+                                        if (col > 0) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Detalle":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataTSales)
+            {
+                sTrimestral.DataTableTotalsSales.Rows.Add(row);
+            }
+
+
+            // TOTALES DE GASTOS
+            var dt1TExpenses = s1.DataTableTotalsExpenses;
+            var dt2TExpenses = s2.DataTableTotalsExpenses;
+            var dt3TExpenses = s3.DataTableTotalsExpenses;
+
+            var combinedDataTExpenses = dt1TExpenses.AsEnumerable().Concat(dt2TExpenses!.AsEnumerable()).Concat(dt3TExpenses!.AsEnumerable());
+            var columnsToSumTExpenses = VentanaGestionService.GetColumnsFromDataTables(dt1TExpenses, dt2TExpenses!, dt3TExpenses!);
+
+
+            var groupedDataTExpenses = combinedDataTExpenses
+                                .GroupBy(r => r.Field<string>("Cod. Ext"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sTrimestral.DataTableTotalsExpenses.NewRow();
+
+                                    for (int col = 0; col < columnsToSumTExpenses.Count; col++)
+                                    {
+                                        string colName = columnsToSumTExpenses[col];
+
+                                        if (col > 1) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Cod. Ext":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                                case "Nombre grupo":
+                                                    newRow[colName] = g.Max(row => row.Field<string>(colName));
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataTExpenses)
+            {
+                sTrimestral.DataTableTotalsExpenses.Rows.Add(row);
+            }
+            // --------------- // 
+
+            sTrimestral.SheetName = "TRIMESTRAL";
+            sTrimestral.TitleSales = "VENTAS";
+            sTrimestral.TitleExpenses = "GASTOS";
+            sTrimestral.TitleTotalsExpenses = "TOTALES GASTOS";
+            sTrimestral.TitleTotalsSales = "TOTALES VENTAS";
+            return sTrimestral;
+
+        }
+        
+        public static ReportExcelFormatSheet[]? GetSheetsAnnual(string[][]? monthCalcAnnual, SAPbouiCOM.Form pForm)
+        {
+            
+            ReportExcelFormatSheet[] sheetsAnnual =
+                        monthCalcAnnual!.Select(month =>
+                        {
+                            ReportExcelFormatSheet sheet = new();
+                            string firstDate = month[0];
+                            string lastDate = month[1];
+
+                            sheet.DateFrom = firstDate;
+                            sheet.DateTo = lastDate;
+
+                            //////
+                            string tableNameExpenses = "dtExpenses-" + firstDate.Replace("-", "");
+                            SAPbouiCOM.DataTable dtExp;            
+                            dtExp = pForm.DataSources.DataTables.Add(tableNameExpenses);
+                            dtExp.ExecuteQuery($"CALL INFORME_EA_GESTION('{firstDate}','{lastDate}', 0)");
+                            CreateColumnsInDataTableSystem(tableNameExpenses, sheet.DataTableExpenses);
+                            LoadDataInDataTableSystem(tableNameExpenses, sheet.DataTableExpenses);
+                            
+                            //////
+                            string tableNameSales = "dtSales-" + firstDate.Replace("-", "");
+                            SAPbouiCOM.DataTable dtSal;
+                            dtSal = pForm.DataSources.DataTables.Add(tableNameSales);
+                            dtSal.ExecuteQuery($"CALL INFORME_EA_GESTION('{firstDate}','{lastDate}', 1)");
+                            CreateColumnsInDataTableSystem(tableNameSales, sheet.DataTableSales);
+                            LoadDataInDataTableSystem(tableNameSales, sheet.DataTableSales);
+
+                            //////
+                            string tableNameTotalsSales = "dtTotalsSales-" + firstDate.Replace("-", "");
+                            SAPbouiCOM.DataTable dtTotalsSal;
+                            dtTotalsSal = pForm.DataSources.DataTables.Add(tableNameTotalsSales);
+                            var totalsSales = CreateDataTableSystem_TotalsSales_Annual(dtTotalsSal, sheet);
+                            CreateColumnsInDataTableSystem(tableNameTotalsSales, sheet.DataTableTotalsSales);
+                            LoadDataInDataTableSystem(tableNameTotalsSales, sheet.DataTableTotalsSales);
+
+                            //////
+                            string tableNameTotalsExpenses = "dtTotalsExp-" + firstDate.Replace("-", "");
+                            SAPbouiCOM.DataTable dtTotalsExp;
+                            dtTotalsExp = pForm.DataSources.DataTables.Add(tableNameTotalsExpenses);
+                            dtTotalsExp.ExecuteQuery($"CALL INFORME_EA_GESTION(CURRENT_DATE, CURRENT_DATE, 2)");
+                            RefreshDataTotalesGastos_Annual(dtExp, dtTotalsExp, totalsSales);
+                            CreateColumnsInDataTableSystem(tableNameTotalsExpenses, sheet.DataTableTotalsExpenses);
+                            LoadDataInDataTableSystem(tableNameTotalsExpenses, sheet.DataTableTotalsExpenses);
+
+                            return sheet;
+                        }).ToArray();
+            return sheetsAnnual;
+        }
+
+        public static void CloneDataTableSheetAnnualFrom(ReportExcelFormatSheet sAnnual, ReportExcelFormatSheet dtFrom)
+        {
+            sAnnual.DataTableExpenses = dtFrom!.DataTableExpenses!.Clone();
+            sAnnual.DataTableSales = dtFrom.DataTableSales!.Clone();
+            sAnnual.DataTableTotalsExpenses = dtFrom.DataTableTotalsExpenses!.Clone();
+            sAnnual.DataTableTotalsSales = dtFrom.DataTableTotalsSales!.Clone();
+        }
+
+        public static void LoadDataExpensesInSheetAnnual(ReportExcelFormatSheet sCurrentTrimestral, ReportExcelFormatSheet sAnnual, ReportExcelFormatSheet[] sheetsAnnual)
+        {
+            var combinedDataExpenses = sheetsAnnual!.SelectMany(sheet => sheet.DataTableExpenses!.AsEnumerable())
+                    .Concat(sCurrentTrimestral!.DataTableExpenses!.AsEnumerable()); 
+
+            var arrColumnsExpenses = sCurrentTrimestral.DataTableExpenses!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName).ToList();
+
+            //// GASTOS
+            int count = 0;
+            var groupedDataExpenses = combinedDataExpenses.AsEnumerable()
+                                .GroupBy(r => r.Field<string>("Cuenta"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sAnnual.DataTableExpenses!.NewRow();
+
+                                    for (int col = 0; col < arrColumnsExpenses.Count; col++)
+                                    {
+                                        string colName = arrColumnsExpenses[col];
+
+                                        if (col > 7)newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "LineID":
+                                                    string lineID = (++count).ToString();
+                                                    newRow[colName] = lineID;
+                                                    break;
+                                                case "Cuenta":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                                default:
+                                                    newRow[colName] = g.Max(row => row.Field<object>(colName));
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataExpenses)
+            {
+                sAnnual.DataTableExpenses!.Rows.Add(row);
+            }
+        }
+
+        public static void LoadDataSalesInSheetAnnual(ReportExcelFormatSheet sCurrentTrimestral, ReportExcelFormatSheet sAnnual, ReportExcelFormatSheet[] sheetsAnnual)
+        {
+            // VENTAS
+            var combinedDataSales = sheetsAnnual.SelectMany(sheet => sheet.DataTableSales!.AsEnumerable())
+            .Concat(sCurrentTrimestral!.DataTableSales!.AsEnumerable());
+
+            var arrColumnsSales = sCurrentTrimestral.DataTableSales!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName).ToList();
+
+            var groupedDataSales = combinedDataSales.AsEnumerable()
+                                .GroupBy(r => r.Field<string>("Linea"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sAnnual.DataTableSales!.NewRow();
+
+                                    for (int col = 0; col < arrColumnsSales.Count; col++)
+                                    {
+                                        string colName = arrColumnsSales[col];
+
+                                        if (col > 0)newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Linea":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataSales)
+            {
+                sAnnual.DataTableSales!.Rows.Add(row);
+            }
+        }
+
+        public static void LoadDataTotalsSalesInSheetAnnual(ReportExcelFormatSheet sCurrentTrimestral, ReportExcelFormatSheet sAnnual, ReportExcelFormatSheet[] sheetsAnnual)
+        {
+            var combinedDataTotalsSales = sheetsAnnual.SelectMany(sheet => sheet.DataTableTotalsSales!.AsEnumerable())
+                    .Concat(sCurrentTrimestral!.DataTableTotalsSales!.AsEnumerable());
+
+            var arrColumnsTotalsSales = sCurrentTrimestral!.DataTableTotalsSales!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName).ToList();
+
+            var groupedDataTSales = combinedDataTotalsSales.AsEnumerable()
+                                .GroupBy(r => r.Field<string>("Detalle"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sAnnual.DataTableTotalsSales!.NewRow();
+
+                                    for (int col = 0; col < arrColumnsTotalsSales.Count; col++)
+                                    {
+                                        string colName = arrColumnsTotalsSales[col];
+
+                                        if (col > 0) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Detalle":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataTSales)
+            {
+                sAnnual.DataTableTotalsSales!.Rows.Add(row);
+            }
+        }
+
+        public static void LoadDataTotalsExpensesInSheetAnnual(ReportExcelFormatSheet sCurrentTrimestral, ReportExcelFormatSheet sAnnual, ReportExcelFormatSheet[] sheetsAnnual)
+        {
+            var combinedDataTotalsExpenses = sheetsAnnual.SelectMany(sheet => sheet.DataTableTotalsExpenses!.AsEnumerable())
+                    .Concat(sCurrentTrimestral!.DataTableTotalsExpenses!.AsEnumerable());
+
+            var arrColumnsTotalsExpenses = sCurrentTrimestral!.DataTableTotalsExpenses!.Columns.Cast<System.Data.DataColumn>().Select(col => col.ColumnName).ToList();
+
+            var groupedDataTExpenses = combinedDataTotalsExpenses.AsEnumerable()
+                                .GroupBy(r => r.Field<string>("Cod. Ext"))
+                                .Select(g =>
+                                {
+                                    DataRow newRow = sAnnual.DataTableTotalsExpenses!.NewRow();
+
+                                    for (int col = 0; col < arrColumnsTotalsExpenses.Count; col++)
+                                    {
+                                        string colName = arrColumnsTotalsExpenses[col];
+
+                                        if (col > 1) newRow[colName] = g.Sum(row => row.Field<double>(colName));
+                                        else
+                                        {
+                                            switch (colName)
+                                            {
+                                                case "Cod. Ext":
+                                                    newRow[colName] = g.Key;
+                                                    break;
+                                                case "Nombre grupo":
+                                                    newRow[colName] = g.Max(row => row.Field<string>(colName));
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    return newRow;
+                                });
+
+            foreach (var row in groupedDataTExpenses)
+            {
+                sAnnual.DataTableTotalsExpenses!.Rows.Add(row);
+            }
+        }
+
+        public static string[][]? GetMonthCalcAnnual(ReportExcelFormat reportExcelFormat)
+        {
+            string[][]? monthCalcAnnual = null;
+
+            var arrTrimestral = new[] { 2, 3, 4 };
+            int year = Convert.ToInt32(reportExcelFormat!.FirstDate.Substring(0, 4)); // 20250101  -> 2025
+            int month = Convert.ToInt32(reportExcelFormat.FirstDate.Substring(4, 2)); // 20250101  -> 01 -> 1
+
+            int[] trimestral1 = [10, 11, 12];
+            int[] trimestral2 = [1, 2, 3];
+            int[] trimestral3 = [4, 5, 6];
+            int[] trimestral4 = [7, 8, 9];
+
+            bool isTrimestral1 = trimestral1.Any(m => m == month);
+            bool isTrimestral2 = trimestral2.Any(m => m == month);
+            bool isTrimestral3 = trimestral3.Any(m => m == month);
+            bool isTrimestral4 = trimestral4.Any(m => m == month);
+
+            int? currentSearchTrimestral =
+                isTrimestral1 ? 1 :
+                isTrimestral2 ? 2 :
+                isTrimestral3 ? 3 :
+                isTrimestral4 ? 4 : null;
+
+            _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+            StaticText lblNumTrimestral = _oForm.Items.Item(_itemLblNumTrimestral).Specific;
+            lblNumTrimestral.Caption = Convert.ToString(currentSearchTrimestral);
+
+            if (arrTrimestral.Any(t => t == currentSearchTrimestral))
+            {
+                
+                if (isTrimestral1) year += 1; 
+                
+                else if (isTrimestral2) year -= 1;
+
+                
+                switch (currentSearchTrimestral)
+                {
+                    case 2:
+                        monthCalcAnnual = GetDateFromAndTo(trimestral1, year);
+                        break;
+                    case 3:
+                        monthCalcAnnual = GetDateFromAndTo(trimestral1.Concat(trimestral2), year);
+                        break;
+                    case 4:
+                        monthCalcAnnual = GetDateFromAndTo(trimestral1.Concat(trimestral2).Concat(trimestral3), year);
+                        break;
+                }
+            }
+
+            return monthCalcAnnual;
+        }
+
+        private static string[][] GetDateFromAndTo(IEnumerable<int> trimestral, int year, string formatDate = "yyyy-MM-dd")
+        {
+            var range = trimestral.Select(month =>
+            {
+                DateTime firstDay = new DateTime(year, month, 1);
+                DateTime lastDay = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+
+                return new string[]
+                {
+                    firstDay.ToString(formatDate),
+                    lastDay.ToString(formatDate)
+                };
+            }).ToArray();
+
+            return range;
+        }
     }
 
     public class VentasGastoTotales
@@ -1496,7 +2266,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
     public class TotalsVentasEntity
     {
         public double totalVenta { get; set; }
-        public double totalCosto{ get; set; }
+        public double totalCosto { get; set; }
         public double totalMargen { get; set; }
         public double totalPorcVenta { get; set; }
         public double totalDirecto { get; set; }
@@ -1512,5 +2282,5 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public double totalIntereses { get; set; }
         public double totalAcumuladoIntereses { get; set; }
         public double totalPorcAcumuladoIntereses { get; set; }
-}
+    }
 }
