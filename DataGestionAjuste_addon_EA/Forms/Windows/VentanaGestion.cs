@@ -28,6 +28,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using DocumentFormat.OpenXml.Office2016.Excel;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 {
@@ -457,12 +458,23 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             // APLICAR COMISIONES
             if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnApplyCommision && pVal.ActionSuccess)
             {
+
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Aplicando comisiones", 100, false);
-                progressBar.Value += 50;
-                VentanaGestionService.CalculateTotals_Comisiones_Acumulado_PorcAcumulado();
-                progressBar.Value += 50;
-                
-            }
+                try
+                {
+                    progressBar.Value += 50;
+                    VentanaGestionService.CalculateTotals_Comisiones_Acumulado_PorcAcumulado();
+                    progressBar.Value += 50;
+                }
+                catch (Exception ex)
+                {
+                    NotificationService.Error(ex.Message);
+                }
+                finally
+                {
+                    progressBar.Stop();
+                }
+        }
 
             // BLOQUEAR Y DESBLOQUEAR BOTONES "APLICAR COMISIONES" Y "APLICAR AJUSTE"
             if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ActionSuccess)

@@ -10,6 +10,7 @@ using REDFARM.Addons.Tools;
 using SAPbobsCOM;
 using SAPbouiCOM;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -340,36 +341,44 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     string account = GRIDGastos.DataTable.Columns.Item(6).Cells.Item(i).Value;
                     double ajuste = GRIDGastos.DataTable.Columns.Item(9).Cells.Item(i).Value;
 
-                    if (ajuste > 0)
-                    {
+                    _oRecordset = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
+                    _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"", ""U_Ajuste"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{account}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '0'");
+                    double ajustePrev = _oRecordset.Fields.Item(1).Value;
 
+                    if (ajuste != 0.00 || ajustePrev != 0.00)
+                    {
                         SAPbobsCOM.CompanyService? companyService = ConnectionSDK.DIAPI!.GetCompanyService();
                         SAPbobsCOM.GeneralService? generalService = companyService.GetGeneralService("GESTIONAJUSTE");
                         GeneralData generalData;
-                        _oRecordset = ConnectionSDK.DIAPI.GetBusinessObject(BoObjectTypes.BoRecordset);
 
-                        _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{account}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '0'");
                         string? code = _oRecordset.Fields.Item(0).Value;
                         bool existAjuste = !string.IsNullOrEmpty(code);
                         if (existAjuste)
-                        {
+                        { 
                             GeneralDataParams generalDataParams = (GeneralDataParams)generalService.GetDataInterface(GeneralServiceDataInterfaces.gsGeneralDataParams);
                             generalDataParams.SetProperty("Code", code);
-
                             generalData = generalService.GetByParams(generalDataParams);
 
-                            generalData.SetProperty("U_Ajuste", ajuste);
-                            generalService.Update(generalData);
+                            if(ajuste == 0)
+                            {
+                                generalService.Delete(generalDataParams);
+                            } else
+                            {
+                                // si es 0 borramos el valor de la tabla 
+                                generalData.SetProperty("U_Ajuste", ajuste);
+                                generalService.Update(generalData);
+                            }
+
                         }
                         else
                         {
 
                             generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+                            // Utilizar hash para generar el code
+                            //_oRecordset.DoQuery(@"SELECT MAX(""Code"") FROM ""@GESTIONAJUSTE""");
+                            //code = string.IsNullOrEmpty(_oRecordset.Fields.Item(0).Value) ? "1" : ((int)int.Parse(_oRecordset.Fields.Item(0).Value) + 1).ToString();
 
-                            _oRecordset.DoQuery(@"SELECT MAX(""Code"") FROM ""@GESTIONAJUSTE""");
-                            code = string.IsNullOrEmpty(_oRecordset.Fields.Item(0).Value) ? "1" : ((int)int.Parse(_oRecordset.Fields.Item(0).Value) + 1).ToString();
-
-                            generalData.SetProperty("Code", code);
+                            generalData.SetProperty("Code", Guid.NewGuid().ToString());
                             generalData.SetProperty("U_Detail", account);
                             generalData.SetProperty("U_Ajuste", ajuste);
                             generalData.SetProperty("U_DateFrom", dateFromParser);
@@ -999,7 +1008,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                         AGROIndirect = d.Sum(data => data.AGROIndirect),
                         ETIndirect = d.Sum(data => data.ETIndirect),
                     };
-                }).ToList();
+                })
+                .ToList();
 
 
                 var totalsSalesDIV_IND = totals[0];
