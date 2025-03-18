@@ -29,6 +29,7 @@ using DocumentFormat.OpenXml.Drawing.Charts;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 
 namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 {
@@ -39,7 +40,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
         #region Atributos
 
         private static SAPbouiCOM.Form? _oForm;
-
+        private static Recordset? _oRecordset;
         private static ReportExcelFormat? _reportExcelFormat;
 
         public const string frmUID = "60004"; 
@@ -141,14 +142,16 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Filtrando datos", 100, true);
 
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService._itemInfoProgress).Specific;
-
+                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
+                string msg;
                 try
                 {
                     var sheet = VentanaGestionService.CreateSheet();
 
                     // GASTOS
-                    oInfoProgress.Caption = "Obteniendo los datos de Gastos..";
+                    msg = "Obteniendo los datos de Gastos..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
                     VentanaGestionService.RefreshDataGastosGrid();
                     progressBar.Value = 10;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaGastos.ToString(), sheet.DataTableExpenses);
@@ -157,7 +160,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     progressBar.Value = 40;
 
                     // VENTAS
-                    oInfoProgress.Caption = "Obteniendo los datos de Ventas..";
+                    msg = "Obteniendo los datos de Ventas..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
                     VentanaGestionService.RefreshDataVentasGrid();
                     progressBar.Value = 50;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
@@ -167,10 +172,15 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
 
                     // TOTALES
-                    oInfoProgress.Caption = "Obteniendo los Totales de Ventas..";
+                    msg = "Obteniendo los Totales de Ventas..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
                     var totals = VentanaGestionService.RefreshDataTotalesVentasGrid(sheet);
                     progressBar.Value = 90;
-                    oInfoProgress.Caption = "Obteniendo los Totales de Gastos..";
+
+                    msg = "Obteniendo los Totales de Gastos..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
                     VentanaGestionService.RefreshDataTotalesGastosGrid(totals!);
                     progressBar.Value = 100;
 
@@ -199,8 +209,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Aplicando Ajustes", 100, false);
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService._itemInfoProgress).Specific;
-
+                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
+                string msg;
                 try
                 {
                     var sheet = VentanaGestionService.CreateSheet();
@@ -210,11 +220,17 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     sheet.DataTableTotalsSales = new System.Data.DataTable();
                     sheet.DataTableTotalsExpenses = new System.Data.DataTable();
 
-                    oInfoProgress.Caption = "Guardando los Ajustes colocados..";
-                    VentanaGestionService.InsertRecordsUDOGestionAjuste();
+                    msg = "Guardando los Ajustes colocados..";
                     progressBar.Value += 10;
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
+                    VentanaGestionService.InsertRecordsUDOGestionAjuste();
+
                     // GASTOS
-                    oInfoProgress.Caption = "Actualizando información de los Gastos..";
+                    msg = "Actualizando información de los Gastos..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
+
                     VentanaGestionService.RefreshDataGastosGrid();
                     progressBar.Value += 10;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaGastos.ToString(), sheet.DataTableExpenses);
@@ -223,7 +239,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     progressBar.Value += 10;
 
                     // VENTAS
-                    oInfoProgress.Caption = "Actualizando información de las Ventas..";
+                    msg = "Actualizando información de las Ventas..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
                     VentanaGestionService.RefreshDataVentasGrid();
                     progressBar.Value += 10;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
@@ -232,11 +250,15 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     progressBar.Value += 10;
 
                     // TOTALES
-                    oInfoProgress.Caption = "Actualizando información de los totales de Ventas..";
+                    msg = "Actualizando información de los totales de Ventas..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
                     var totals = VentanaGestionService.RefreshDataTotalesVentasGrid(sheet);
                     progressBar.Value += 10;
 
-                    oInfoProgress.Caption = "Actualizando información de los totales de Gastos..";
+                    msg = "Actualizando información de los totales de Gastos..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
                     VentanaGestionService.RefreshDataTotalesGastosGrid(totals!);
                     progressBar.Value += 20;
                     ConnectionSDK.UIAPI!.MessageBox("Ajuste aplicado con éxito");
@@ -259,10 +281,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             // PRESIONAR BOTON "GUARDAR"
             if(pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnSave && pVal.ActionSuccess)  
             {
-                SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Guardando ajustes", 100, true);
+                SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Guardando ajustes", 100, false);
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService._itemInfoProgress).Specific;
-                
+                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
+                string msg;
                 try
                 {
                     SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
@@ -270,29 +292,36 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
                     var sheet = VentanaGestionService.CreateSheet();
 
-                    oInfoProgress.Caption = "Guardando los datos de Gastos..";
-
+                    msg = "Guardando los datos de Gastos..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
+                    progressBar.Value = 20;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaGastos.ToString(), sheet.DataTableExpenses);
                     VentanaGestionService.LoadDataInDataTableSystem(NameDataTables.tablaGastos.ToString(), sheet.DataTableExpenses);
-                    progressBar.Value = 20;
 
 
-                    oInfoProgress.Caption = "Guardando los datos de Ventas..";
+                    msg = "Guardando los datos de Ventas..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
+                    progressBar.Value = 40;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
                     VentanaGestionService.LoadDataInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
-                    progressBar.Value = 40;
 
 
-                    oInfoProgress.Caption = "Guardando los Totales de Ventas..";
+                    msg = "Guardando los Totales de Ventas..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
+                    progressBar.Value = 60;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaTotalVentas.ToString(), sheet.DataTableTotalsSales);
                     VentanaGestionService.LoadDataInDataTableSystem(NameDataTables.tablaTotalVentas.ToString(), sheet.DataTableTotalsSales);
-                    progressBar.Value = 60;
 
 
-                    oInfoProgress.Caption = "Guardando los Totales de Gastos..";
+                    msg = "Guardando los Totales de Gastos..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
+                    progressBar.Value = 80;
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaTotalGastos.ToString(), sheet.DataTableTotalsExpenses);
                     VentanaGestionService.LoadDataInDataTableSystem(NameDataTables.tablaTotalGastos.ToString(), sheet.DataTableTotalsExpenses);
-                    progressBar.Value = 80;
 
 
                     VentanaGestionService.ResetGestionAjuste();
@@ -338,16 +367,17 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Comenzando proceso de exportación", 100, false);
 
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService._itemInfoProgress).Specific;
+                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
                 ButtonCombo oBCExport = (ButtonCombo)_oForm!.Items.Item(_itemBtnExport).Specific;
-
+                string msg;
                 try {                
 
                     progressBar.Value = 10;
-                    oInfoProgress.Caption = "Calculando información del trimestre actual..";
-
+                    msg = "Calculando información del trimestre actual..";
+                    oInfoProgress.Caption = msg;
+                    progressBar.Text = msg;
                     var sCurrTrimestral = VentanaGestionService.CalcCurrentTrimestral(_reportExcelFormat!);
-                    progressBar.Value = 50;
+                    progressBar.Value = 20;
 
                     _reportExcelFormat!.Sheets.Add(sCurrTrimestral!);
 
@@ -355,31 +385,40 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
                     if(monthCalcAnnual != null)
                     {
-                        oInfoProgress.Caption = "Calculando información anual..";
-
+                        msg = "Calculando información anual..";
+                        oInfoProgress.Caption = msg;
+                        progressBar.Text = msg;
                         var sheetsAnnual = VentanaGestionService.GetSheetsAnnual(monthCalcAnnual, _oForm);
 
                         ReportExcelFormatSheet sAnnual = new();
                         VentanaGestionService.CloneDataTableSheetAnnualFrom(sAnnual, sCurrTrimestral!);
-                        progressBar.Value = 60;
+                        progressBar.Value = 40;
 
                         // GASTOS
-                        oInfoProgress.Caption = "Calculando información anual.. Obteniendo informacion de Gastos.";
+                        msg = "Calculando información anual.. Obteniendo informacion de Gastos.";
+                        oInfoProgress.Caption = msg;
+                        progressBar.Text = msg;
                         VentanaGestionService.LoadDataExpensesInSheetAnnual(sCurrTrimestral!, sAnnual, sheetsAnnual!);
-                        progressBar.Value = 70;
+                        progressBar.Value = 60;
 
                         // VENTAS
-                        oInfoProgress.Caption = "Calculando información anual.. Obteniendo informacion de Ventas.";
+                        msg = "Calculando información anual.. Obteniendo informacion de Ventas.";
+                        oInfoProgress.Caption = msg;
+                        progressBar.Text = msg;
                         VentanaGestionService.LoadDataSalesInSheetAnnual(sCurrTrimestral!, sAnnual, sheetsAnnual!);
-                        progressBar.Value = 80;
+                        progressBar.Value = 70;
 
                         // TOTALES DE VENTAS
-                        oInfoProgress.Caption = "Calculando información anual.. Obteniendo informacion de los Totales de Ventas.";
+                        msg = "Calculando información anual.. Obteniendo informacion de los Totales de Ventas.";
+                        oInfoProgress.Caption = msg;
+                        progressBar.Text = msg;
                         VentanaGestionService.LoadDataTotalsSalesInSheetAnnual(sCurrTrimestral!, sAnnual, sheetsAnnual!);
                         progressBar.Value = 90;
 
                         // TOTALES DE GASTOS
-                        oInfoProgress.Caption = "Calculando información anual.. Obteniendo informacion de los Totales de Gastos.";
+                        msg = "Calculando información anual.. Obteniendo informacion de los Totales de Gastos.";
+                        oInfoProgress.Caption = msg;
+                        progressBar.Text = msg;
                         VentanaGestionService.LoadDataTotalsExpensesInSheetAnnual(sCurrTrimestral!, sAnnual, sheetsAnnual!);
                         progressBar.Value = 100;
 
@@ -460,11 +499,24 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             {
 
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Aplicando comisiones", 100, false);
+
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(pVal.FormUID);
+                SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
+
                 try
                 {
-                    progressBar.Value += 50;
+                    string msg = "Calculando comisiones..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
+                    progressBar.Value += 25;
                     VentanaGestionService.CalculateTotals_Comisiones_Acumulado_PorcAcumulado();
                     progressBar.Value += 50;
+
+                    msg = "Guardando comisiones aplicadas..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
+                    VentanaGestionService.InsertRecordsCommissionsUDOGestionAjuste();
+                    progressBar.Value += 25;
                 }
                 catch (Exception ex)
                 {
@@ -472,6 +524,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 }
                 finally
                 {
+                    oInfoProgress.Caption = "";
                     progressBar.Stop();
                 }
         }
@@ -499,7 +552,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             if (pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ItemUID == _itemDateFrom && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(pVal.FormUID);
-                SAPbouiCOM.StaticText lblNumTrimestral = _oForm.Items.Item(VentanaGestionService._itemLblNumTrimestral).Specific;
+                SAPbouiCOM.StaticText lblNumTrimestral = _oForm.Items.Item(VentanaGestionService.itemLblNumTrimestral).Specific;
                 SAPbouiCOM.EditText dateFrom = _oForm.Items.Item(_itemDateFrom).Specific;
 
                 if(!string.IsNullOrEmpty(dateFrom.Value))

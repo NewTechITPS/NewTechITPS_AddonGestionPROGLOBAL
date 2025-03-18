@@ -44,24 +44,24 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         private static int _countForm = 0;
 
 
-        public static string _itemLblNumTrimestral = "Item_22";
-        public static string _itemDateFrom = "Item_0";
-        public static string _itemDateTo = "Item_1";
-        public static string _itemBtnFilter = "Item_4";
-        public static string _itemBtnExport = "Item_5";
-        public static string _itemBtnApplyCommision = "Item_18";
-        public static string _itemBtnSave = "Item_14";
-        public static string _itemGridSavedAjustes = "Item_15";
-        public static string _itemLoading = "Item_19";
-        public static string _itemInfoProgress = "Item_23";
-        public static string _itemSolapaVentas = "Item_11";
-        public static string _itemSolapaGastos = "Item_7";
-        public static string _itemSolapaTotalVentas = "Item_9";
-        public static string _itemSolapaTotalGastos = "Item_17";
-        public static string _itemGridGastos = "Item_8";
-        public static string _itemGridTotalVentas = "Item_10";
-        public static string _itemGridVentas = "Item_12";
-        public static string _itemGridTotalGastos = "Item_20";
+        public static string itemLblNumTrimestral = "Item_22";
+        public static string itemDateFrom = "Item_0";
+        public static string itemDateTo = "Item_1";
+        public static string itemBtnFilter = "Item_4";
+        public static string itemBtnExport = "Item_5";
+        public static string itemBtnApplyCommision = "Item_18";
+        public static string itemBtnSave = "Item_14";
+        public static string itemGridSavedAjustes = "Item_15";
+        public static string itemLoading = "Item_19";
+        public static string itemInfoProgress = "Item_23";
+        public static string itemSolapaVentas = "Item_11";
+        public static string itemSolapaGastos = "Item_7";
+        public static string itemSolapaTotalVentas = "Item_9";
+        public static string itemSolapaTotalGastos = "Item_17";
+        public static string itemGridGastos = "Item_8";
+        public static string itemGridTotalVentas = "Item_10";
+        public static string itemGridVentas = "Item_12";
+        public static string itemGridTotalGastos = "Item_20";
 
 
         private static string _colAcumulado = "Acumulado (1)";
@@ -106,10 +106,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
                 _oForm = ConnectionSDK.UIAPI!.Forms.AddEx(p);
 
-                Folder oFolderGastos = _oForm.Items.Item(_itemSolapaGastos).Specific;
+                Folder oFolderGastos = _oForm.Items.Item(itemSolapaGastos).Specific;
                 oFolderGastos.Select();
 
-                SAPbouiCOM.Item oItemExport = _oForm.Items.Item(_itemBtnExport);
+                SAPbouiCOM.Item oItemExport = _oForm.Items.Item(itemBtnExport);
                 ButtonCombo oBtnComboExport = oItemExport.Specific;
                 oBtnComboExport.ValidValues.Add("Exportar Excel", "Exportar Excel");
 
@@ -194,15 +194,15 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 string formatDate = "yyyyMMdd";
                 string formatDateSP = "yyyy-MM-dd";
 
-                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
+                SAPbouiCOM.Item item = _oForm!.Items.Item(itemDateFrom);
                 EditText ETDateFrom = item.Specific;
                 string sDateFrom = ETDateFrom.Value;
 
-                item = _oForm.Items.Item(_itemDateTo);
+                item = _oForm.Items.Item(itemDateTo);
                 EditText ETDateTo = item.Specific;
                 string sDateTo = ETDateTo.Value;
 
-                item = _oForm.Items.Item(_itemGridGastos);
+                item = _oForm.Items.Item(itemGridGastos);
                 Grid GRIDGastos = item.Specific;
 
                 SAPbouiCOM.DataTable oDataTableGastos = CreateDataTable(sDateFrom, sDateTo, NameDataTables.tablaGastos.ToString(), 0);
@@ -239,17 +239,17 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 string formatDate = "yyyyMMdd";
                 string formatDateSP = "yyyy-MM-dd";
 
-                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
+                SAPbouiCOM.Item item = _oForm!.Items.Item(itemDateFrom);
                 EditText ETDateFrom = item.Specific;
                 string sDateFrom = ETDateFrom.Value;
                 string DateFrom = DateTime.ParseExact(sDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
-                item = _oForm.Items.Item(_itemDateTo);
+                item = _oForm.Items.Item(itemDateTo);
                 EditText ETDateTo = item.Specific;
                 string sDateTo = ETDateTo.Value;
                 string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
-                item = _oForm.Items.Item(_itemGridVentas);
+                item = _oForm.Items.Item(itemGridVentas);
                 Grid GRIDVentas = item.Specific;
 
                 SAPbouiCOM.DataTable oDataTableVentas;
@@ -326,9 +326,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
-                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemGridGastos);
-                string dateFrom = _oForm.Items.Item(_itemDateFrom).Specific.Value;
-                string dateTo = _oForm.Items.Item(_itemDateTo).Specific.Value;
+                SAPbouiCOM.Item item = _oForm!.Items.Item(itemGridGastos);
+                string dateFrom = _oForm.Items.Item(itemDateFrom).Specific.Value;
+                string dateTo = _oForm.Items.Item(itemDateTo).Specific.Value;
 
                 DateTime dateFromParser = DateTime.ParseExact(dateFrom, "yyyyMMdd", CultureInfo.InvariantCulture);
                 DateTime dateToParser = DateTime.ParseExact(dateTo, "yyyyMMdd", CultureInfo.InvariantCulture);
@@ -410,8 +410,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
 
-                EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
-                EditText ETDateTo = _oForm!.Items.Item(_itemDateTo).Specific;
+                EditText ETDateFrom = _oForm!.Items.Item(itemDateFrom).Specific;
+                EditText ETDateTo = _oForm!.Items.Item(itemDateTo).Specific;
 
                 ETDateFrom.Value = null;
                 ETDateTo.Value = null;
@@ -516,8 +516,8 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
-                EditText ETDateTo = _oForm!.Items.Item(_itemDateTo).Specific;
+                EditText ETDateFrom = _oForm!.Items.Item(itemDateFrom).Specific;
+                EditText ETDateTo = _oForm!.Items.Item(itemDateTo).Specific;
 
                 DateTime dDateFrom = DateTime.ParseExact(ETDateFrom.Value, "yyyyMMdd", CultureInfo.InvariantCulture);
 
@@ -555,7 +555,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                Grid GSavedAjuste = _oForm!.Items.Item(_itemGridSavedAjustes).Specific;
+                Grid GSavedAjuste = _oForm!.Items.Item(itemGridSavedAjustes).Specific;
                 GSavedAjuste.DataTable.Rows.Add();
                 GSavedAjuste.DataTable.SetValue(0, GSavedAjuste.DataTable.Rows.Count - 1, sheet.SheetName);
             }
@@ -864,17 +864,17 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 string formatDate = "yyyyMMdd";
                 string formatDateSP = "yyyy-MM-dd";
 
-                SAPbouiCOM.Item item = _oForm!.Items.Item(_itemDateFrom);
+                SAPbouiCOM.Item item = _oForm!.Items.Item(itemDateFrom);
                 EditText ETDateFrom = item.Specific;
                 string sDateFrom = ETDateFrom.Value;
                 string DateFrom = DateTime.ParseExact(sDateFrom, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
-                item = _oForm.Items.Item(_itemDateTo);
+                item = _oForm.Items.Item(itemDateTo);
                 EditText ETDateTo = item.Specific;
                 string sDateTo = ETDateTo.Value;
                 string DateTo = DateTime.ParseExact(sDateTo, formatDate, CultureInfo.InvariantCulture).ToString(formatDateSP);
 
-                item = _oForm.Items.Item(_itemGridTotalVentas);
+                item = _oForm.Items.Item(itemGridTotalVentas);
                 Grid GRIDTotalesVentas = item.Specific;
 
                 SAPbouiCOM.DataTable oDataTableTotalesVentas;
@@ -964,7 +964,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-                SAPbouiCOM.Grid GRIDGastos = _oForm.Items.Item(_itemGridGastos).Specific;
+                SAPbouiCOM.Grid GRIDGastos = _oForm.Items.Item(itemGridGastos).Specific;
 
                 List<DataTotalsExpenses> LinQTableGastos = new();
                 for (int r = 0; r < GRIDGastos.Rows.Count; r++)
@@ -1091,7 +1091,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(_itemGridTotalGastos).Specific;
+                SAPbouiCOM.Grid GRIDTotalesGastos = _oForm.Items.Item(itemGridTotalGastos).Specific;
                 GRIDTotalesGastos.DataTable = oDataTableTotalesGastos;
 
                 GRIDTotalesGastos.Item.Enabled = false;
@@ -1270,7 +1270,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public static void LoadData_Direct_Indirect_PorcVenta_Neto_InSolapaSales(TotalsVentasEntity totalComponente)
         {
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            SAPbouiCOM.Grid GVtas = _oForm.Items.Item(_itemGridVentas).Specific;
+            SAPbouiCOM.Grid GVtas = _oForm.Items.Item(itemGridVentas).Specific;
             for (int col = 0; col < GVtas.Columns.Count; col++)
             {
                 string columnName = GVtas.DataTable.Columns.Item(col).Name;
@@ -1560,7 +1560,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
             try
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-                Grid GTotales = _oForm.Items.Item(_itemGridTotalVentas).Specific;
+                Grid GTotales = _oForm.Items.Item(itemGridTotalVentas).Specific;
 
                 if (GTotales.Rows.Count > 0)
                 {
@@ -1759,6 +1759,88 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         }
 
+        public static void InsertRecordsCommissionsUDOGestionAjuste()
+        {
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+                Grid GTotales = _oForm.Items.Item(VentanaGestionService.itemGridTotalVentas).Specific;
+                SAPbouiCOM.DataTable dtTotalesV = GTotales.DataTable;
+
+                string dateFrom = _oForm.Items.Item(VentanaGestionService.itemDateFrom).Specific.Value;
+                string dateTo = _oForm.Items.Item(VentanaGestionService.itemDateTo).Specific.Value;
+
+                DateTime dateFromParser = DateTime.ParseExact(dateFrom, "yyyyMMdd", CultureInfo.InvariantCulture);
+                DateTime dateToParser = DateTime.ParseExact(dateTo, "yyyyMMdd", CultureInfo.InvariantCulture);
+
+                for (int i = 0; i < dtTotalesV.Rows.Count; i++)
+                {
+
+                    string detail = dtTotalesV.Columns.Item("Detalle").Cells.Item(i).Value;
+                    double commission = dtTotalesV.Columns.Item("Comisiones").Cells.Item(i).Value;
+
+                    _oRecordset = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
+                    _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"", ""U_Commission"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{detail}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '2'");
+                    double commissionPrev = _oRecordset.Fields.Item(1).Value;
+                    string? code = _oRecordset.Fields.Item(0).Value;
+
+                    if (commissionPrev != 0 || commission != 0)
+                    {
+                        SAPbobsCOM.CompanyService? companyService = ConnectionSDK.DIAPI!.GetCompanyService();
+                        SAPbobsCOM.GeneralService? generalService = companyService.GetGeneralService("GESTIONAJUSTE");
+                        GeneralData generalData;
+
+                        bool existCommission = !string.IsNullOrEmpty(code);
+
+                        if (existCommission)
+                        {
+                            GeneralDataParams generalDataParams = (GeneralDataParams)generalService.GetDataInterface(GeneralServiceDataInterfaces.gsGeneralDataParams);
+                            generalDataParams.SetProperty("Code", code);
+                            generalData = generalService.GetByParams(generalDataParams);
+
+                            if (commission == 0)
+                            {
+                                generalService.Delete(generalDataParams);
+                            }
+                            else
+                            {
+                                generalData.SetProperty("U_Commission", commission);
+                                generalService.Update(generalData);
+                            }
+
+                        }
+                        else
+                        {
+
+                            generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+                            generalData.SetProperty("Code", Guid.NewGuid().ToString());
+                            generalData.SetProperty("U_Detail", detail);
+                            generalData.SetProperty("U_Commission", commission);
+                            generalData.SetProperty("U_DateFrom", dateFromParser);
+                            generalData.SetProperty("U_DateTo", dateToParser);
+                            generalData.SetProperty("U_Entity", "2");
+
+                            generalService.Add(generalData);
+
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                if (_oForm != null)
+                {
+                    MarshalGC.ReleaseComObjects(_oForm);
+                    GC.Collect();
+                    GC.RefreshMemoryLimit();
+                    _oForm = null;
+                }
+            }
+        }
 
         public static ReportExcelFormatSheet? CalcCurrentTrimestral(ReportExcelFormat reportExcelFormat)
         {
@@ -2204,7 +2286,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 isTrimestral4 ? 4 : null;
 
             _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
-            StaticText lblNumTrimestral = _oForm.Items.Item(_itemLblNumTrimestral).Specific;
+            StaticText lblNumTrimestral = _oForm.Items.Item(itemLblNumTrimestral).Specific;
             lblNumTrimestral.Caption = Convert.ToString(currentSearchTrimestral);
 
             if (arrTrimestral.Any(t => t == currentSearchTrimestral))
