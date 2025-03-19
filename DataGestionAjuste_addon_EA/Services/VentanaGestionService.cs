@@ -1777,34 +1777,34 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 {
 
                     string detail = dtTotalesV.Columns.Item("Detalle").Cells.Item(i).Value;
-                    double commission = dtTotalesV.Columns.Item("Comisiones").Cells.Item(i).Value;
+                    double resultAcum = dtTotalesV.Columns.Item("Acumulado (1)").Cells.Item(i).Value;
 
                     _oRecordset = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
-                    _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"", ""U_Commission"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{detail}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '2'");
-                    double commissionPrev = _oRecordset.Fields.Item(1).Value;
+                    _oRecordset.DoQuery(@$"SELECT TOP 1 ""Code"", ""U_ResultAcum"" FROM ""@GESTIONAJUSTE"" WHERE ""U_Detail"" = '{detail}' AND ""U_DateFrom"" = '{dateFromParser.ToString("yyyy-MM-dd")}' AND ""U_DateTo"" = '{dateToParser.ToString("yyyy-MM-dd")}' AND ""U_Entity"" = '2'");
+                    double resultAcumPrev = _oRecordset.Fields.Item(1).Value;
                     string? code = _oRecordset.Fields.Item(0).Value;
 
-                    if (commissionPrev != 0 || commission != 0)
+                    if (resultAcumPrev != 0 || resultAcum != 0)
                     {
                         SAPbobsCOM.CompanyService? companyService = ConnectionSDK.DIAPI!.GetCompanyService();
                         SAPbobsCOM.GeneralService? generalService = companyService.GetGeneralService("GESTIONAJUSTE");
                         GeneralData generalData;
 
-                        bool existCommission = !string.IsNullOrEmpty(code);
+                        bool existResultAcum = !string.IsNullOrEmpty(code);
 
-                        if (existCommission)
+                        if (existResultAcum)
                         {
                             GeneralDataParams generalDataParams = (GeneralDataParams)generalService.GetDataInterface(GeneralServiceDataInterfaces.gsGeneralDataParams);
                             generalDataParams.SetProperty("Code", code);
                             generalData = generalService.GetByParams(generalDataParams);
 
-                            if (commission == 0)
+                            if (resultAcum == 0)
                             {
                                 generalService.Delete(generalDataParams);
                             }
                             else
                             {
-                                generalData.SetProperty("U_Commission", commission);
+                                generalData.SetProperty("U_ResultAcum", resultAcum);
                                 generalService.Update(generalData);
                             }
 
@@ -1815,7 +1815,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                             generalData = (SAPbobsCOM.GeneralData)generalService!.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
                             generalData.SetProperty("Code", Guid.NewGuid().ToString());
                             generalData.SetProperty("U_Detail", detail);
-                            generalData.SetProperty("U_Commission", commission);
+                            generalData.SetProperty("U_ResultAcum", resultAcum);
                             generalData.SetProperty("U_DateFrom", dateFromParser);
                             generalData.SetProperty("U_DateTo", dateToParser);
                             generalData.SetProperty("U_Entity", "2");
@@ -2296,7 +2296,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 
                 else if (isTrimestral2) year -= 1;
 
-                
+
                 switch (currentSearchTrimestral)
                 {
                     case 2:

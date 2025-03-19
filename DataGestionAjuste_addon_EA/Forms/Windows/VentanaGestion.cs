@@ -30,6 +30,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 {
@@ -176,6 +177,38 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     progressBar.Text = msg;
                     oInfoProgress.Caption = msg;
                     var totals = VentanaGestionService.RefreshDataTotalesVentasGrid(sheet);
+
+                    SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
+                    _reportExcelFormat!.FirstDate = ETDateFrom.Value;
+
+                    var monthCalcToSearch = VentanaGestionService.GetMonthCalcAnnual(_reportExcelFormat!);
+                    Recordset oRec = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
+                    if (monthCalcToSearch != null)
+                    {
+                        string query = @$"SELECT * FROM ""@GESTIONAJUSTE"" WHERE ""U_Entity"" = '2' AND ";
+                        string[] itemFormatFilters = monthCalcToSearch.Select(date => @$" ( ""U_DateFrom"" = '{date[0]}' AND ""U_DateTo"" = '{date[1]}' ) ").ToArray();
+                        string parseQueryFilter = string.Join(" OR ", itemFormatFilters);
+                        query += parseQueryFilter;
+                        oRec.DoQuery(query);
+
+                        List<ResultAcumModel> data = new();
+                        while (!oRec.EoF)
+                        {
+                            var obj = new ResultAcumModel
+                            {
+                                Detail = oRec.Fields.Item("U_Detail").Value,
+                                ResultAcum = oRec.Fields.Item("U_ResultAcum").Value,
+                                DateFrom = oRec.Fields.Item("U_DateFrom").Value,
+                                DateTo = oRec.Fields.Item("U_DateTo").Value
+                            };
+                            data.Add(obj);
+                            oRec.MoveNext();
+                        }
+                        // TO DO: FALTA AGRUPAR Y SUMARIZAR, Y LUEGO RECORRER LOS DATOS DE LA GRILLA Y SUMARLE EL ACUMULADO 
+                        
+                    }
+
+
                     progressBar.Value = 90;
 
                     msg = "Obteniendo los Totales de Gastos..";
