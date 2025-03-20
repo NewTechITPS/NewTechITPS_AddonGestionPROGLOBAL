@@ -50,6 +50,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public static string itemBtnFilter = "Item_4";
         public static string itemBtnExport = "Item_5";
         public static string itemBtnApplyCommision = "Item_18";
+        public static string itemBtnApplyAjuste = "Item_13";
         public static string itemBtnSave = "Item_14";
         public static string itemGridSavedAjustes = "Item_15";
         public static string itemLoading = "Item_19";
@@ -63,13 +64,12 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
         public static string itemGridVentas = "Item_12";
         public static string itemGridTotalGastos = "Item_20";
 
-
-        private static string _colAcumulado = "Acumulado (1)";
-        private static string _colPorcAcum = "% s. ventas (5)";
-        private static string _colMensual = "Mensual";
-        private static string _colComision = "Comisiones";
-        private static string _colVentas = "Ventas";
-        private static string _colDetalle = "Detalle";
+        public static string sColAcumulado = "Acumulado (1)";
+        public static string sColPorcAcum = "% s. ventas (5)";
+        public static string sColMensual = "Mensual";
+        public static string sColComision = "Comisiones";
+        public static string sColVentas = "Ventas";
+        public static string sColDetalle = "Detalle";
 
         public static void CreateMenu()
         {
@@ -1565,10 +1565,10 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                 if (GTotales.Rows.Count > 0)
                 {
 
-                    SAPbouiCOM.DataColumn colDetalle = GTotales.DataTable.Columns.Item(_colDetalle);
-                    SAPbouiCOM.DataColumn colComision = GTotales.DataTable.Columns.Item(_colComision);
-                    SAPbouiCOM.DataColumn colAcumulado = GTotales.DataTable.Columns.Item(_colAcumulado);
-                    SAPbouiCOM.DataColumn colPorcAcumulado = GTotales.DataTable.Columns.Item(_colPorcAcum);
+                    SAPbouiCOM.DataColumn colDetalle = GTotales.DataTable.Columns.Item(sColDetalle);
+                    SAPbouiCOM.DataColumn colComision = GTotales.DataTable.Columns.Item(sColComision);
+                    SAPbouiCOM.DataColumn colAcumulado = GTotales.DataTable.Columns.Item(sColAcumulado);
+                    SAPbouiCOM.DataColumn colPorcAcumulado = GTotales.DataTable.Columns.Item(sColPorcAcum);
 
                     _oForm.Freeze(true);
 
@@ -1599,9 +1599,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                                     porcAcumuladoTotal += valuePorcAcumulado;
                                 }
                             }
-                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
-                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
-                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+                            GTotales.DataTable.SetValue(sColComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(sColAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(sColPorcAcum, i, porcAcumuladoTotal);
                         }
 
                         // AGRO
@@ -1622,9 +1622,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                                     porcAcumuladoTotal += valuePorcAcumulado;
                                 }
                             }
-                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
-                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
-                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+                            GTotales.DataTable.SetValue(sColComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(sColAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(sColPorcAcum, i, porcAcumuladoTotal);
 
                         }
 
@@ -1646,9 +1646,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                                     porcAcumuladoTotal += valuePorcAcumulado;
                                 }
                             }
-                            GTotales.DataTable.SetValue(_colComision, i, comisionTotal);
-                            GTotales.DataTable.SetValue(_colAcumulado, i, acumuladoTotal);
-                            GTotales.DataTable.SetValue(_colPorcAcum, i, porcAcumuladoTotal);
+                            GTotales.DataTable.SetValue(sColComision, i, comisionTotal);
+                            GTotales.DataTable.SetValue(sColAcumulado, i, acumuladoTotal);
+                            GTotales.DataTable.SetValue(sColPorcAcum, i, porcAcumuladoTotal);
 
                         }
 
@@ -1689,9 +1689,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                                 }
                             }
 
-                            GTotales.DataTable.SetValue(_colComision, i, totalComponenteComision);
-                            GTotales.DataTable.SetValue(_colAcumulado, i, totalComponenteAcumulado);
-                            GTotales.DataTable.SetValue(_colPorcAcum, i, totalComponentePorcAcumulado);
+                            GTotales.DataTable.SetValue(sColComision, i, totalComponenteComision);
+                            GTotales.DataTable.SetValue(sColAcumulado, i, totalComponenteAcumulado);
+                            GTotales.DataTable.SetValue(sColPorcAcum, i, totalComponentePorcAcumulado);
 
                         }
 
@@ -1732,9 +1732,9 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                                 }
                             }
 
-                            GTotales.DataTable.SetValue(_colComision, i, totalProglobalComision);
-                            GTotales.DataTable.SetValue(_colAcumulado, i, totalProglobalAcumulado);
-                            GTotales.DataTable.SetValue(_colPorcAcum, i, totalProglobalPorcAcumulado);
+                            GTotales.DataTable.SetValue(sColComision, i, totalProglobalComision);
+                            GTotales.DataTable.SetValue(sColAcumulado, i, totalProglobalAcumulado);
+                            GTotales.DataTable.SetValue(sColPorcAcum, i, totalProglobalPorcAcumulado);
 
                         }
                     }
@@ -1759,7 +1759,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
 
         }
 
-        public static void InsertRecordsCommissionsUDOGestionAjuste()
+        public static void InsertRecordsResultAcumuladoUDOGestionAjuste()
         {
             try
             {
@@ -1837,6 +1837,81 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Services
                     MarshalGC.ReleaseComObjects(_oForm);
                     GC.Collect();
                     GC.RefreshMemoryLimit();
+                    _oForm = null;
+                }
+            }
+        }
+
+        public static void CalcResultAcumInFlagTotalSales(ReportExcelFormat reportExcelFormat)
+        {
+            try
+            {
+                _oForm = ConnectionSDK.UIAPI!.Forms.Item(_FormUID);
+                SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(itemDateFrom).Specific;
+                reportExcelFormat!.FirstDate = ETDateFrom.Value;
+
+                var monthCalcToSearch = GetMonthCalcAnnual(reportExcelFormat!);
+                Recordset oRec = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
+                if (monthCalcToSearch != null)
+                {
+                    string query = @$"SELECT * FROM ""@GESTIONAJUSTE"" WHERE ""U_Entity"" = '2' AND ";
+                    string[] itemFormatFilters = monthCalcToSearch.Select(date => @$" ( ""U_DateFrom"" = '{date[0]}' AND ""U_DateTo"" = '{date[1]}' ) ").ToArray();
+                    string parseQueryFilter = string.Join(" OR ", itemFormatFilters);
+                    query += parseQueryFilter;
+                    oRec.DoQuery(query);
+
+                    List<ResultAcumModel> data = new();
+                    while (!oRec.EoF)
+                    {
+                        var obj = new ResultAcumModel
+                        {
+                            Detail = oRec.Fields.Item("U_Detail").Value,
+                            ResultAcum = oRec.Fields.Item("U_ResultAcum").Value,
+                            DateFrom = oRec.Fields.Item("U_DateFrom").Value,
+                            DateTo = oRec.Fields.Item("U_DateTo").Value
+                        };
+                        data.Add(obj);
+                        oRec.MoveNext();
+                    }
+
+                    var agroupData = data
+                        .GroupBy(d => d.Detail)
+                        .Select(g =>
+                        {
+                            return new ResultAcumModel()
+                            {
+                                Detail = g.Key,
+                                ResultAcum = g.Sum(d => d.ResultAcum),
+                                DateFrom = g.Max(d => d.DateFrom),
+                                DateTo = g.Max(d => d.DateTo)
+                            };
+                        }).ToList();
+
+                    Grid GTotalsSales = _oForm!.Items.Item(itemGridTotalVentas).Specific;
+                    SAPbouiCOM.DataTable dtTotalsSales = GTotalsSales.DataTable;
+                    for (int i = 0; i < dtTotalsSales.Rows.Count; i++)
+                    {
+                        string detail = dtTotalsSales.Columns.Item("Detalle").Cells.Item(i).Value;
+                        var detailFind = agroupData.FirstOrDefault(d => d.Detail == detail);
+                        if (detailFind != null)
+                        {
+                            SAPbouiCOM.DataCell cellAcum = dtTotalsSales.Columns.Item("Acumulado (1)").Cells.Item(i);
+                            cellAcum.Value += detailFind.ResultAcum;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                if (_oForm != null)
+                {
+                    MarshalGC.ReleaseComObjects(_oForm);
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                     _oForm = null;
                 }
             }

@@ -47,30 +47,6 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
         public const string frmUID = "60004"; 
         public const string menuUID = "VentanaGestion";
 
-        private string _itemDateFrom = "Item_0";
-        private string _itemDateTo = "Item_1";
-        private string _itemBtnFilter = "Item_4";
-        private string _itemBtnExport = "Item_5";
-        private string _itemBtnApplyCommision = "Item_18";
-        private string _itemGridGastos = "Item_8";
-        private string _itemGridTotales = "Item_10";
-        private string _itemGridVentas = "Item_12";
-        private string _itemBtnApplyAjuste = "Item_13";
-        private string _itemBtnSave = "Item_14";
-        private string _itemGridSavedAjustes = "Item_15";
-        private string _itemLoading = "Item_19";
-        private string _itemSolapaVentas = "Item_11";
-        private string _itemSolapaGastos = "Item_7";
-        private string _itemSolapaTotalVentas = "Item_9";
-        private string _itemSolapaTotalGastos = "Item_17";
-
-
-        private string _colAcumulado = "Acumulado (1)";
-        private string _colPorcAcum = "% s. ventas (5)";
-        private string _colMensual = "Mensual";
-        private string _colComision = "Comisiones";
-        private string _colVentas = "Ventas";
-        private string _colDetalle = "Detalle";
         #endregion
 
         public void OSAPB1appl_MenuEvent(ref SAPbouiCOM.MenuEvent pVal, out bool BubbleEvent)
@@ -108,25 +84,25 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             if (pVal.EventType == BoEventTypes.et_FORM_RESIZE && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                Grid GAjusteSave = _oForm.Items.Item(_itemGridSavedAjustes).Specific;
+                Grid GAjusteSave = _oForm.Items.Item(VentanaGestionService.itemGridSavedAjustes).Specific;
                 GAjusteSave.Item.Width = 180;
                 GAjusteSave.Item.Height = 153;
             }
 
             // VALIDACION CAMPOS FECHAS
-            if (pVal.EventType == BoEventTypes.et_VALIDATE && (pVal.ItemUID == _itemDateFrom || pVal.ItemUID == _itemDateTo) && pVal.ActionSuccess)
+            if (pVal.EventType == BoEventTypes.et_VALIDATE && (pVal.ItemUID == VentanaGestionService.itemDateFrom || pVal.ItemUID == VentanaGestionService.itemDateTo) && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
-                SAPbouiCOM.Item oItem = _oForm!.Items.Item(_itemDateFrom);
+                SAPbouiCOM.Item oItem = _oForm!.Items.Item(VentanaGestionService.itemDateFrom);
                 SAPbouiCOM.EditText ETDateFrom = oItem.Specific;
 
-                oItem = _oForm.Items.Item(_itemDateTo);
+                oItem = _oForm.Items.Item(VentanaGestionService.itemDateTo);
                 SAPbouiCOM.EditText ETDateTo = oItem.Specific;
 
                 string valueDateFrom = ETDateFrom.Value;
                 string valueDateTo = ETDateTo.Value;
 
-                oItem = _oForm.Items.Item(_itemBtnFilter);
+                oItem = _oForm.Items.Item(VentanaGestionService.itemBtnFilter);
                 oItem.Enabled = !string.IsNullOrEmpty(valueDateFrom) && !string.IsNullOrEmpty(valueDateTo);
                 
             }
@@ -138,7 +114,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             }
 
             // PRESIONAR BOTON "FILTRAR"
-            if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnFilter && pVal.ActionSuccess) 
+            if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == VentanaGestionService.itemBtnFilter && pVal.ActionSuccess) 
             {
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Filtrando datos", 100, true);
 
@@ -169,56 +145,40 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                     VentanaGestionService.CreateColumnsInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
                     progressBar.Value = 60;
                     VentanaGestionService.LoadDataInDataTableSystem(NameDataTables.tablaVentas.ToString(), sheet.DataTableSales);
-                    progressBar.Value = 80;
+                    progressBar.Value = 70;
 
 
                     // TOTALES
                     msg = "Obteniendo los Totales de Ventas..";
                     progressBar.Text = msg;
                     oInfoProgress.Caption = msg;
+                    progressBar.Value = 75;
                     var totals = VentanaGestionService.RefreshDataTotalesVentasGrid(sheet);
+                    progressBar.Value = 80;
 
-                    SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
-                    _reportExcelFormat!.FirstDate = ETDateFrom.Value;
-
-                    var monthCalcToSearch = VentanaGestionService.GetMonthCalcAnnual(_reportExcelFormat!);
-                    Recordset oRec = ConnectionSDK.DIAPI!.GetBusinessObject(BoObjectTypes.BoRecordset);
-                    if (monthCalcToSearch != null)
-                    {
-                        string query = @$"SELECT * FROM ""@GESTIONAJUSTE"" WHERE ""U_Entity"" = '2' AND ";
-                        string[] itemFormatFilters = monthCalcToSearch.Select(date => @$" ( ""U_DateFrom"" = '{date[0]}' AND ""U_DateTo"" = '{date[1]}' ) ").ToArray();
-                        string parseQueryFilter = string.Join(" OR ", itemFormatFilters);
-                        query += parseQueryFilter;
-                        oRec.DoQuery(query);
-
-                        List<ResultAcumModel> data = new();
-                        while (!oRec.EoF)
-                        {
-                            var obj = new ResultAcumModel
-                            {
-                                Detail = oRec.Fields.Item("U_Detail").Value,
-                                ResultAcum = oRec.Fields.Item("U_ResultAcum").Value,
-                                DateFrom = oRec.Fields.Item("U_DateFrom").Value,
-                                DateTo = oRec.Fields.Item("U_DateTo").Value
-                            };
-                            data.Add(obj);
-                            oRec.MoveNext();
-                        }
-                        // TO DO: FALTA AGRUPAR Y SUMARIZAR, Y LUEGO RECORRER LOS DATOS DE LA GRILLA Y SUMARLE EL ACUMULADO 
-                        
-                    }
-
-
+                    msg = "Calculando el Resultado Acumulado..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
+                    progressBar.Value = 85;
+                    VentanaGestionService.CalcResultAcumInFlagTotalSales(_reportExcelFormat!);
                     progressBar.Value = 90;
+
+                    msg = "Guardando los nuevos resultados acumulados en Totales de Ventas..";
+                    progressBar.Text = msg;
+                    oInfoProgress.Caption = msg;
+                    VentanaGestionService.InsertRecordsResultAcumuladoUDOGestionAjuste();
+                    progressBar.Value = 95;
+
 
                     msg = "Obteniendo los Totales de Gastos..";
                     progressBar.Text = msg;
                     oInfoProgress.Caption = msg;
+                    
                     VentanaGestionService.RefreshDataTotalesGastosGrid(totals!);
                     progressBar.Value = 100;
 
-                    SAPbouiCOM.Item oItemBtnAjuste = _oForm.Items.Item(_itemBtnApplyAjuste);
-                    SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(_itemBtnSave);
+                    SAPbouiCOM.Item oItemBtnAjuste = _oForm.Items.Item(VentanaGestionService.itemBtnApplyAjuste);
+                    SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(VentanaGestionService.itemBtnSave);
                     oItemBtnAjuste.Enabled = true;
                     oItemBtnSave.Enabled = true;
 
@@ -237,7 +197,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             }
 
             // PRESIONAR BOTON "APLICAR AJUSTE"
-            if(pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnApplyAjuste && pVal.ActionSuccess) 
+            if(pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == VentanaGestionService.itemBtnApplyAjuste && pVal.ActionSuccess) 
             {
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Aplicando Ajustes", 100, false);
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
@@ -312,7 +272,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             }
 
             // PRESIONAR BOTON "GUARDAR"
-            if(pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnSave && pVal.ActionSuccess)  
+            if(pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == VentanaGestionService.itemBtnSave && pVal.ActionSuccess)  
             {
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Guardando ajustes", 100, false);
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
@@ -320,7 +280,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
                 string msg;
                 try
                 {
-                    SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(_itemDateFrom).Specific;
+                    SAPbouiCOM.EditText ETDateFrom = _oForm!.Items.Item(VentanaGestionService.itemDateFrom).Specific;
                     _reportExcelFormat!.FirstDate = ETDateFrom.Value;
 
                     var sheet = VentanaGestionService.CreateSheet();
@@ -365,13 +325,13 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
                     ConnectionSDK.UIAPI!.MessageBox("Ajuste guardado con éxito -> Ajuste: " + sheet.SheetName);
 
-                    SAPbouiCOM.Item oItemBtnAjuste = _oForm.Items.Item(_itemBtnApplyAjuste);
-                    SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(_itemBtnSave);
+                    SAPbouiCOM.Item oItemBtnAjuste = _oForm.Items.Item(VentanaGestionService.itemBtnApplyAjuste);
+                    SAPbouiCOM.Item oItemBtnSave = _oForm.Items.Item(VentanaGestionService.itemBtnSave);
                     oItemBtnAjuste.Enabled = false;
                     oItemBtnSave.Enabled = false;
 
-                    ButtonCombo oBCExport = (ButtonCombo)_oForm!.Items.Item(_itemBtnExport).Specific;
-                    Grid GSavedAjuste = _oForm!.Items.Item(_itemGridSavedAjustes).Specific;
+                    ButtonCombo oBCExport = (ButtonCombo)_oForm!.Items.Item(VentanaGestionService.itemBtnExport).Specific;
+                    Grid GSavedAjuste = _oForm!.Items.Item(VentanaGestionService.itemGridSavedAjustes).Specific;
 
                     if (GSavedAjuste.Rows.Count == 3)
                     {
@@ -395,13 +355,13 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             }
 
             // PRESIONAR BOTON "EXPORTAR EXCEL"
-            if (pVal.EventType == BoEventTypes.et_COMBO_SELECT && pVal.ItemUID == _itemBtnExport && pVal.ActionSuccess)
+            if (pVal.EventType == BoEventTypes.et_COMBO_SELECT && pVal.ItemUID == VentanaGestionService.itemBtnExport && pVal.ActionSuccess)
             {
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Comenzando proceso de exportación", 100, false);
 
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(FormUID);
                 SAPbouiCOM.StaticText oInfoProgress = _oForm.Items.Item(VentanaGestionService.itemInfoProgress).Specific;
-                ButtonCombo oBCExport = (ButtonCombo)_oForm!.Items.Item(_itemBtnExport).Specific;
+                ButtonCombo oBCExport = (ButtonCombo)_oForm!.Items.Item(VentanaGestionService.itemBtnExport).Specific;
                 string msg;
                 try {                
 
@@ -501,22 +461,22 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             }
 
             // CALCULAR ACUMULADO Y SU PORCENTAJE
-            if (pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ColUID == _colComision && pVal.ItemUID == _itemGridTotales && pVal.ActionSuccess)
+            if (pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ColUID == VentanaGestionService.sColComision && pVal.ItemUID == VentanaGestionService.itemGridTotalVentas && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(pVal.FormUID);
                 _oForm.Freeze(true);
 
                 try
                 {
-                    Grid GTotales = _oForm.Items.Item(_itemGridTotales).Specific;
+                    Grid GTotales = _oForm.Items.Item(VentanaGestionService.itemGridTotalVentas).Specific;
 
-                    double mensual = GTotales.DataTable.GetValue(_colMensual, pVal.Row);
-                    double comision = GTotales.DataTable.GetValue(_colComision, pVal.Row);
-                    double ventas = GTotales.DataTable.GetValue(_colVentas, pVal.Row);
+                    double mensual = GTotales.DataTable.GetValue(VentanaGestionService.sColMensual, pVal.Row);
+                    double comision = GTotales.DataTable.GetValue(VentanaGestionService.sColComision, pVal.Row);
+                    double ventas = GTotales.DataTable.GetValue(VentanaGestionService.sColVentas, pVal.Row);
 
                     double acumulado = mensual + comision;
-                    GTotales.DataTable.Columns.Item(_colAcumulado).Cells.Item(pVal.Row).Value = acumulado;
-                    GTotales.DataTable.Columns.Item(_colPorcAcum).Cells.Item(pVal.Row).Value = ventas != 0 ? acumulado / ventas * 100 : 0;
+                    GTotales.DataTable.Columns.Item(VentanaGestionService.sColAcumulado).Cells.Item(pVal.Row).Value = acumulado;
+                    GTotales.DataTable.Columns.Item(VentanaGestionService.sColPorcAcum).Cells.Item(pVal.Row).Value = ventas != 0 ? acumulado / ventas * 100 : 0;
                 } catch(Exception ex)
                 {
                     NotificationService.Error(ex.Message);
@@ -528,7 +488,7 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
 
             // APLICAR COMISIONES
-            if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == _itemBtnApplyCommision && pVal.ActionSuccess)
+            if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ItemUID == VentanaGestionService.itemBtnApplyCommision && pVal.ActionSuccess)
             {
 
                 SAPbouiCOM.ProgressBar progressBar = ConnectionSDK.UIAPI!.StatusBar.CreateProgressBar("Aplicando comisiones", 100, false);
@@ -538,17 +498,17 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
 
                 try
                 {
-                    string msg = "Calculando comisiones..";
+                    string msg = "Calculando resultado acumulado..";
                     progressBar.Text = msg;
                     oInfoProgress.Caption = msg;
                     progressBar.Value += 25;
                     VentanaGestionService.CalculateTotals_Comisiones_Acumulado_PorcAcumulado();
                     progressBar.Value += 50;
 
-                    msg = "Guardando comisiones aplicadas..";
+                    msg = "Guardando los resultados acumulados..";
                     progressBar.Text = msg;
                     oInfoProgress.Caption = msg;
-                    VentanaGestionService.InsertRecordsCommissionsUDOGestionAjuste();
+                    VentanaGestionService.InsertRecordsResultAcumuladoUDOGestionAjuste();
                     progressBar.Value += 25;
                 }
                 catch (Exception ex)
@@ -566,27 +526,27 @@ namespace PROGLOBAL_DataGestionAjuste_addon_EA.Forms.WINDOW
             if (pVal.EventType == BoEventTypes.et_ITEM_PRESSED && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(pVal.FormUID);
-                SAPbouiCOM.Item itemApplyAjuste = _oForm.Items.Item(_itemBtnApplyAjuste);
-                SAPbouiCOM.Item itemApplyCommision = _oForm.Items.Item(_itemBtnApplyCommision);
+                SAPbouiCOM.Item itemApplyAjuste = _oForm.Items.Item(VentanaGestionService.itemBtnApplyAjuste);
+                SAPbouiCOM.Item itemApplyCommision = _oForm.Items.Item(VentanaGestionService.itemBtnApplyCommision);
 
-                Folder solapaVentas = _oForm.Items.Item(_itemSolapaVentas).Specific;
-                Folder solapaGastos = _oForm.Items.Item(_itemSolapaGastos).Specific;
-                Folder solapaTotalVentas = _oForm.Items.Item(_itemSolapaTotalVentas).Specific;
+                Folder solapaVentas = _oForm.Items.Item(VentanaGestionService.itemSolapaVentas).Specific;
+                Folder solapaGastos = _oForm.Items.Item(VentanaGestionService.itemSolapaGastos).Specific;
+                Folder solapaTotalVentas = _oForm.Items.Item(VentanaGestionService.itemSolapaTotalVentas).Specific;
 
-                Grid GVentas = _oForm.Items.Item(_itemGridVentas).Specific;
-                Grid GGastos = _oForm.Items.Item(_itemGridGastos).Specific;
-                Grid GTotales = _oForm.Items.Item(_itemGridTotales).Specific;
+                Grid GVentas = _oForm.Items.Item(VentanaGestionService.itemGridVentas).Specific;
+                Grid GGastos = _oForm.Items.Item(VentanaGestionService.itemGridGastos).Specific;
+                Grid GTotales = _oForm.Items.Item(VentanaGestionService.itemGridTotalVentas).Specific;
 
                 itemApplyCommision.Enabled = solapaTotalVentas.Selected && GTotales.Rows.Count > 0;
                 itemApplyAjuste.Enabled = (solapaVentas.Selected && GVentas.Rows.Count > 0) || (solapaGastos.Selected && GGastos.Rows.Count > 0);
             }
 
             // CALCULAR TRIMESTRE AUTOMATICAMENTE
-            if (pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ItemUID == _itemDateFrom && pVal.ActionSuccess)
+            if (pVal.EventType == BoEventTypes.et_VALIDATE && pVal.ItemUID == VentanaGestionService.itemDateFrom && pVal.ActionSuccess)
             {
                 _oForm = ConnectionSDK.UIAPI!.Forms.Item(pVal.FormUID);
                 SAPbouiCOM.StaticText lblNumTrimestral = _oForm.Items.Item(VentanaGestionService.itemLblNumTrimestral).Specific;
-                SAPbouiCOM.EditText dateFrom = _oForm.Items.Item(_itemDateFrom).Specific;
+                SAPbouiCOM.EditText dateFrom = _oForm.Items.Item(VentanaGestionService.itemDateFrom).Specific;
 
                 if(!string.IsNullOrEmpty(dateFrom.Value))
                 {
